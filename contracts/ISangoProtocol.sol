@@ -3,6 +3,9 @@ pragma solidity ^0.8.0;
 
 interface ISangoProtocol {
     function statement(address receiver) external;
+    function distribute() external;
+
+    function setCETPropotion(uint32 propotion) external;
 
     function addChild(address child) external;
     function setParent(address parent) external;

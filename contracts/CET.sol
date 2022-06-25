@@ -5,10 +5,9 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CET is ERC20, Ownable {
-    constructor(uint256 initialSupply)
+    constructor()
         ERC20("ContentExcitedToken", "CET")
     {
-        _mint(msg.sender, initialSupply);
     }
 
     function mint(uint256 supply)
