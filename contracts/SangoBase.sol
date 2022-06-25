@@ -52,10 +52,10 @@ contract SangoProtocol is ERC721, Ownable, ISangoProtocol {
         // 受け取ったRBTの総量
         uint256 totalRBT = r.balanceOf(address(this));
 
-        // 子コンテンツ (CET) 側を切り捨てる
+        // 子コンテンツ / FAN (CET) 側を切り捨てる
         uint256 childrenRBT = totalRBT * _cetPropotion / 10000;
 
-        // 子コンテンツのCET総数を計算
+        // 子コンテンツ / FAN のCET総数を計算
         uint256 totalCET = 0;
         for (uint32 i = 0; i < _children.length; i++) {
             uint256 cet = _cetContract.balanceOf(_children[i]);
