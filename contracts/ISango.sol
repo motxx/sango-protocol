@@ -1,9 +1,16 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface ISangoBase {
+// このクラスの責務
+// - CBT のステーク, アンステーク
+// - CET の受け取り表明, Burn（CETのMintは ExcitingService にまかせる)
+// - Contents Royalty Graph 管理, RBT distribution
+interface ISango {
     function distribute() external;
 
+    function setGovernance(address governance) external;
+    function setExcitingServices(address[] exciting) external onlyOwner;
+   
     // Contents Register Service invokes
     // - constructor / setCETPropotion / setCBTPropotion
     function setCETPropotion(uint32 propotion) external onlyOwner;
@@ -21,7 +28,7 @@ interface ISangoBase {
     // - CBT staked
     // - CET mited / burn
     // - RBT received 
-    function contentsGraphScale () external view ();
+    function getGraphScale () external view ();
     // このグラフの親を取得
     function getRoot () external view ();
 
@@ -31,7 +38,7 @@ interface ISangoBase {
     function stake(uint amount) external; // ToDo
     // ステークしてるCBTを全額引き出す
     function unstake() external; // ToDo
-    // 
+    // 自分がステークしているか確認
     function isMeStaking() external view returns (bool);
 
     // ステークしてからRBTがもらえるようになるまでの期間を設定する
@@ -43,12 +50,14 @@ interface ISangoBase {
         uint propotion;
     };
     // - Stake 時間 / 量 / 比率(現在の);
-    function getSteke() external view (StakeInfo); // ToDo
+    function getStekeInfo() external view (StakeInfo); // ToDo
 
     // -------- CET --------
     // CETを受け取るAddr(Wallet / Contract)の表明
     function statement(address receiver) external;
 
+    // 登録してある Exciting Module に対し Mint CET を実行する
+    function mintCET(address addr) external view (uint); // ToDo
     // CET を Burn する
     function burnCET(uint amount) external; // ToDo 
     // Burn した総量を確認
