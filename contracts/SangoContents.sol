@@ -12,7 +12,8 @@ struct RoyaltyPropotions {
     uint32[] propotions; // 0 (0.00 %) ~ 10000 (100.00 %)
 }
 
-contract SangoContents is ERC721, Ownable, ISangoContents {
+// https://forum.openzeppelin.com/t/does-openzeppelin-have-staking-pool-contracts/22128
+contract SangoContents is Ownable, ISangoContents {
     address _rbtAddress; // RBT token address
     uint32 _cetPropotion; // CET の割合 (子コンテンツへの分配率). 0 (0.00 %) ~ 10000 (100.00 %).
 
@@ -20,11 +21,9 @@ contract SangoContents is ERC721, Ownable, ISangoContents {
 
     address _parent; // 親コンテンツ (SangoProtocol).
     address[] _children; // 子コンテンツ (SangoProtocol). CETの分配対象.
-    RoyaltyPropotions _creators; // クリエイター (EOA).    
+    RoyaltyPropotions _creators; // クリエイター (EOA).
 
-    constructor(RoyaltyPropotions memory creators, address rbtAddress)
-        ERC721("SangoProtocol", "Sango")
-    {
+    constructor(RoyaltyPropotions memory creators, address rbtAddress) {
         uint length = creators.receivers.length;
         require (length == creators.propotions.length, "Mismatch length.");
         uint32 total = 0;
@@ -61,6 +60,7 @@ contract SangoContents is ERC721, Ownable, ISangoContents {
             uint256 cet = _cetContract.balanceOf(_children[i]);
             totalCET += cet;
         }
+
         // CETの割合に応じてRBTを分配
         uint256 usedCET = 0;
         for (uint32 i = 0; i < _children.length; i++) {
