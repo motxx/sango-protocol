@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 // - CBT のステーク, アンステーク
 // - CET の受け取り表明, Burn（CETのMintは ExcitingService にまかせる)
 // - Contents Royalty Graph 管理, RBT distribution
-interface ISango {
+interface ISangoContents {
     function distribute() external;
 
     function setGovernance(address governance) external;

@@ -5,14 +5,14 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { CET } from "./CET.sol";
-import { ISangoProtocol } from "./ISangoProtocol.sol";
+import { ISangoContents } from "./ISangoContents.sol";
 
 struct RoyaltyPropotions {
     address[] receivers;
     uint32[] propotions; // 0 (0.00 %) ~ 10000 (100.00 %)
 }
 
-contract SangoProtocol is ERC721, Ownable, ISangoProtocol {
+contract SangoContents is ERC721, Ownable, ISangoContents {
     address _rbtAddress; // RBT token address
     uint32 _cetPropotion; // CET の割合 (子コンテンツへの分配率). 0 (0.00 %) ~ 10000 (100.00 %).
 
