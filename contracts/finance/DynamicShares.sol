@@ -35,7 +35,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * @param shares_ The shares owned by the payees.
      */
     function initPayees(address[] calldata payees, uint256[] calldata shares_)
-        external
+        public
     {
         _totalShares = 0;
         _payees = payees;
@@ -51,7 +51,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * @dev Reset payees and shares in the contract.
      */
     function resetPayees()
-        external
+        public
     {
         _totalShares = 0;
         delete _payees;
@@ -59,7 +59,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
     }
 
     function addPayee(address payee, uint256 share)
-        external
+        public
     {
         _payees.push(payee);
         _shares[payee] = share;
