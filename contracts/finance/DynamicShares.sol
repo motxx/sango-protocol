@@ -102,6 +102,60 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
     }
 
     /**
+     * @dev アカウントが受領したトークンの総量
+     * @param account The address of the account.
+     */
+    function totalReceived(address account)
+        external
+        view
+        returns (uint256)
+    {
+        return _totalReceived[account];
+    }
+
+    /**
+     * @dev アカウントに放出されたトークンの総量
+     * @param account The address of the account.
+     */
+    function alreadyReleased(address account)
+        external
+        view
+        returns (uint256)
+    {
+        return _alreadyReleased[account];
+    }
+
+    /**
+     * @dev アカウントの現在の分配を取得
+     * @param account The address of the account.
+     */
+    function shares(address account)
+        external
+        view
+        returns (uint256)
+    {
+        for (uint32 i = 0; i < _payees.length;) {
+            // XXX: initShares() で shares は初期化されないため判定が必要
+            if (_payees[i] == account) {
+                return _shares[account];
+            }
+            unchecked { i++; }
+        }
+        return 0;
+    }
+
+    /**
+     * @dev 現在の分配を受けるアカウント一覧を取得
+     */
+    function allPayees()
+        external
+        view
+        returns (address[] memory)
+    {
+        return _payees;
+    }
+
+    /**
      * @dev The Ether received will be logged with {PaymentReceived} events. Note that these events are not fully
      * reliable: it's possible for a contract to receive Ether without triggering this function. This only affects the
      * reliability of the events, and not the actual splitting of Ether.

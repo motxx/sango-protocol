@@ -102,4 +102,48 @@ describe("DynamicShares", () => {
     await dShares.connect(s1).withdraw();
     expect(await rbt.balanceOf(s1.address)).to.equal(1200);
   });
+
+  it("Should return correct total received", async () => {
+    await dShares.initShares([s1.address, s2.address], [2, 3]);
+    await rbt.mint(dShares.address, 1000);
+    expect(await dShares.totalReceived(s1.address)).to.equal(400);
+    expect(await dShares.totalReceived(s2.address)).to.equal(600);
+
+    await rbt.mint(dShares.address, 100);
+    expect(await dShares.totalReceived(s1.address)).to.equal(440);
+    expect(await dShares.totalReceived(s2.address)).to.equal(660);
+  });
+
+  it("Should return correct already released", async () => {
+    await dShares.initShares([s1.address, s2.address], [2, 3]);
+    await rbt.mint(dShares.address, 1000);
+    expect(await dShares.alreadyReleased(s1.address)).to.equal(0);
+    expect(await dShares.alreadyReleased(s2.address)).to.equal(0);
+
+    await dShares.release(s1.address);
+    await dShares.release(s2.address);
+    expect(await dShares.alreadyReleased(s1.address)).to.equal(400);
+    expect(await dShares.alreadyReleased(s2.address)).to.equal(600);
+
+    await rbt.mint(dShares.address, 100);
+    expect(await dShares.alreadyReleased(s1.address)).to.equal(400);
+    expect(await dShares.alreadyReleased(s2.address)).to.equal(600);
+
+    await dShares.release(s1.address);
+    await dShares.release(s2.address);
+    expect(await dShares.alreadyReleased(s1.address)).to.equal(440);
+    expect(await dShares.alreadyReleased(s2.address)).to.equal(660);
+  });
+
+  it("Should return correct shares", async () => {
+    await dShares.initShares([s1.address, s2.address], [2, 3]);
+    expect(await dShares.shares(s1.address)).to.equal(2);
+    expect(await dShares.shares(s2.address)).to.equal(3);
+    expect(await dShares.shares(s3.address)).to.equal(0);
+
+    await dShares.initShares([s3.address], [1]);
+    expect(await dShares.shares(s1.address)).to.equal(0);
+    expect(await dShares.shares(s2.address)).to.equal(0);
+    expect(await dShares.shares(s3.address)).to.equal(1);
+  });
 });
