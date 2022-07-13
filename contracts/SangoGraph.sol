@@ -11,8 +11,8 @@ contract SangoGraph is ISangoGraph {
     mapping (address => mapping (address => uint32)) private _graph;
     IERC20 private _rbt;
 
-    constructor(address _rbtAddress) {
-        _rbt = IERC20(_rbtAddress);
+    constructor(address rbtAddress) {
+        _rbt = IERC20(rbtAddress);
     }
 
     function addEdge(address secondary, address primary, uint32 weight)
