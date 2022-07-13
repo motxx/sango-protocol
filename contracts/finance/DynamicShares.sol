@@ -7,6 +7,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Context } from "@openzeppelin/contracts/utils/Context.sol";
 import { ISharesReceiver } from "./ISharesReceiver.sol";
 
+/**
+ * @dev ERC20 のトークンを指定の比率に従って各ウォレットやコントラクトに配分するクラス
+ * OpenZeppelin の PaymentSplitter を動的に payees, shares を変更可能としたもの
+ * 使用する ERC20 は transfer 時に onERC20SharesReceived を呼び出す必要がある
+ */
 contract DynamicShares is ISharesReceiver, Context, IERC165 {
     event InitShares(address[] payees, uint256[] shares);
     event ResetShares();
@@ -114,6 +119,9 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
         _totalReceived[_payees[0]] += amount - sumShares; // 最初の人が余剰分を受け取る.
     }
 
+    /**
+     * @dev ERC165 の機能. ERC20 で transfer の to が本コントラクトかを判定するために用いる.
+     */
     function supportsInterface(bytes4 interfaceId)
         external
         pure
