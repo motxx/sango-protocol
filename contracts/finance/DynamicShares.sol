@@ -32,7 +32,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * @param payees The addresses of the payee to add.
      * @param shares_ The shares owned by the payees.
      */
-    function initShares(address[] calldata payees, uint256[] calldata shares_)
+    function initPayees(address[] calldata payees, uint256[] calldata shares_)
         external
     {
         _totalShares = 0;
