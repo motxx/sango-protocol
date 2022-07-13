@@ -146,4 +146,19 @@ describe("DynamicShares", () => {
     expect(await dShares.shares(s2.address)).to.equal(0);
     expect(await dShares.shares(s3.address)).to.equal(1);
   });
+
+  it("Should behaves in the same way: resetPayees, addPayee vs initPayees", async () => {
+    // Should be same as: await dShares.initPayees([s1.address, s2.address], [2, 3]);
+    await dShares.addPayee(s1.address, 2);
+    await dShares.addPayee(s2.address, 3);
+    expect(await dShares.shares(s1.address)).to.equal(2);
+    expect(await dShares.shares(s2.address)).to.equal(3);
+
+    // Should be same as: await dShares.initPayees([s3.address], [1]);
+    await dShares.resetPayees();
+    await dShares.addPayee(s3.address, 1);
+    expect(await dShares.shares(s1.address)).to.equal(0);
+    expect(await dShares.shares(s2.address)).to.equal(0);
+    expect(await dShares.shares(s3.address)).to.equal(1);
+  });
 });

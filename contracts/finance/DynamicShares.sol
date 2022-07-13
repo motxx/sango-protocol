@@ -9,6 +9,8 @@ import { ISharesReceiver } from "./ISharesReceiver.sol";
 
 contract DynamicShares is ISharesReceiver, Context, IERC165 {
     event InitShares(address[] payees, uint256[] shares);
+    event ResetShares();
+    event AddPayee(address payee, uint256 share);
     event ERC20PaymentReleased(IERC20 indexed token, address to, uint256 amount);
     event PaymentReceived(address from, uint256 amount);
 
@@ -43,6 +45,26 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
             unchecked { i++; }
         }
         emit InitShares(payees, shares_);
+    }
+
+    /**
+     * @dev Reset payees and shares in the contract.
+     */
+    function resetPayees()
+        external
+    {
+        _totalShares = 0;
+        delete _payees;
+        emit ResetShares();
+    }
+
+    function addPayee(address payee, uint256 share)
+        external
+    {
+        _payees.push(payee);
+        _shares[payee] = share;
+        _totalShares += share;
+        emit AddPayee(payee, share);
     }
 
     /**
