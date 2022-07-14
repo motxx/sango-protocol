@@ -4,7 +4,7 @@ pragma solidity 0.8.7;
 interface ISangoContent {
     /**
      * @notice RBTの受け取る比率(ベーシスポイント)を設定する.
-     * 全体で10000を超えて設定することはできない。
+     * 全体で10000を超えて設定することはできない. 余剰分はTreasuryに入る.
      *
      * @param creatorProp クリエイター側の取り分
      * @param cetBurnerProp CET Burner の全体の取り分
