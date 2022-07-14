@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.7;
 
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -12,7 +13,7 @@ import { ISharesReceiver } from "./ISharesReceiver.sol";
  * OpenZeppelin の PaymentSplitter を動的に payees, shares を変更可能としたもの
  * 使用する ERC20 は transfer 時に onERC20SharesReceived を呼び出す必要がある
  */
-contract DynamicShares is ISharesReceiver, Context, IERC165 {
+contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
     event InitShares(address[] payees, uint256[] shares);
     event ResetShares();
     event AddPayee(address payee, uint256 share);
@@ -41,6 +42,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      */
     function initPayees(address[] calldata payees, uint256[] calldata shares_)
         public
+        onlyOwner
     {
         _totalShares = 0;
         _payees = payees;
@@ -57,6 +59,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      */
     function resetPayees()
         public
+        onlyOwner
     {
         _totalShares = 0;
         delete _payees;
@@ -65,6 +68,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
 
     function addPayee(address payee, uint256 share)
         public
+        onlyOwner
     {
         _payees.push(payee);
         _shares[payee] = share;
@@ -108,6 +112,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
         external
         override
     {
+        require(msg.sender == address(_token), "DynamicShares: must be called by pre-registered ERC20 token");
         require(_payees.length > 0, "DynamicShares: no payees");
         require(_token.balanceOf(address(this)) >= amount, "DynamicShares: too much amount");
 

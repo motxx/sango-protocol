@@ -161,4 +161,29 @@ describe("DynamicShares", () => {
     expect(await dShares.shares(s2.address)).to.equal(0);
     expect(await dShares.shares(s3.address)).to.equal(1);
   });
+
+  it("Should fail to initPayees if caller is not the owner", async () => {
+    await expect(dShares.connect(s1).initPayees([s2.address], [100])).to.revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'");
+  });
+
+  it("Should fail to resetPayees if caller is not the owner", async () => {
+    await expect(dShares.connect(s1).resetPayees()).to.revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'");
+  });
+
+  it("Should fail to addPayee if caller is not the owner", async () => {
+    await expect(dShares.connect(s1).addPayee(s1.address, 100)).to.revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'");
+  });
+
+  it("Should fail to receive fake RBT", async () => {
+    const FakeRBT = await ethers.getContractFactory("RBT");
+    const fakeRBT = await FakeRBT.deploy();
+    await fakeRBT.deployed();
+
+    await dShares.initPayees([s1.address], [1]);
+    await expect(fakeRBT.mint(dShares.address, 1000)).to.revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'DynamicShares: must be called by pre-registered ERC20 token'");
+  });
 });
