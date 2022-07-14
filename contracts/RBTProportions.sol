@@ -8,7 +8,7 @@ import { DynamicShares } from "./finance/DynamicShares.sol";
  * @dev SangoContent に流入した RBT を Creator, CET Burner,
  * CBT Staker, Primaries に分配する. 余剰分は Treasury に蓄積される.
  */
-contract RBTShares is DynamicShares {
+contract RBTProportions is DynamicShares {
     DynamicShares private _creatorShares;
     DynamicShares private _cetBurnerShares;
     DynamicShares private _cbtStakerShares;
@@ -26,26 +26,30 @@ contract RBTShares is DynamicShares {
     }
 
     /**
-     * @dev RBT の分配率を設定する. 各分配率 i は share_i / Σshare_i で決定される.
-     * 分配率の再設定は常に可能.
+     * @dev RBT の分配率(ベーシスポイント)を設定する. 分配率の再設定は常に可能.
      */
-    function setRBTShares(
-        uint32 creatorShare_,
-        uint32 cetBurnerShare_,
-        uint32 cbtStakerShare_,
-        uint32 primaryShare_
+    function setRBTProportions(
+        uint32 creatorProp,
+        uint32 cetBurnerProp,
+        uint32 cbtStakerProp,
+        uint32 primaryProp
     )
         public
     {
+        require(creatorProp + cetBurnerProp + cbtStakerProp + primaryProp <= 10000,
+            "SangoContent: sum proportions <= 10000");
+
         resetPayees();
-        addPayee(address(_creatorShares), creatorShare_);
-        addPayee(address(_cetBurnerShares), cetBurnerShare_);
-        addPayee(address(_cbtStakerShares), cbtStakerShare_);
-        addPayee(address(_primaryShares), primaryShare_);
-        uint256 treasuryShare = 10000
-            - (creatorShare_ + cetBurnerShare_ + cbtStakerShare_ + primaryShare_);
-        if (treasuryShare > 0) {
-            addPayee(address(this), treasuryShare);
+        addPayee(address(_creatorShares), creatorProp);
+        addPayee(address(_cetBurnerShares), cetBurnerProp);
+        addPayee(address(_cbtStakerShares), cbtStakerProp);
+        addPayee(address(_primaryShares), primaryProp);
+
+        uint256 treasuryProp =
+            10000 - (creatorProp + cetBurnerProp + cbtStakerProp + primaryProp);
+        if (treasuryProp > 0) {
+            // 10000 未満の場合、余剰分が Treasury に蓄積する.
+            addPayee(address(this), treasuryProp);
         }
     }
 
