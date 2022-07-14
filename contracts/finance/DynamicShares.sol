@@ -100,7 +100,9 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
     }
 
     /**
-     * @dev ERC20のトークンを受け取った際の分配
+     * @dev ERC20のトークンを受け取った際の分配.
+     * 分配対象が未設定の場合、revertされる.
+     * (mintやreleaseによる、ERC20のtransferが失敗する.)
      */
     function onERC20SharesReceived(uint256 amount)
         external
