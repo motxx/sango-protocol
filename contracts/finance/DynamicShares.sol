@@ -76,10 +76,12 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * @dev Triggers a transfer to `account` of the amount of `token` tokens they are owed, according to their
      * percentage of the total shares and their previous withdrawals. `token` must be the address of an IERC20
      * contract.
+     * release 対象の account に自身を指定するはことはできない. なお Treasury 用途で自身の addPayee() は可.
      */
     function release(address account)
         public
     {
+        require(account != address(this), "DynamicShares: self payment loop");
         uint256 payment = _totalReceived[account] - _alreadyReleased[account];
         require(payment > 0, "DynamicShares: account is not due payment");
         _alreadyReleased[account] += payment;
