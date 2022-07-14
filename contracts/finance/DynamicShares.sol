@@ -125,7 +125,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * @dev ERC165 の機能. ERC20 で transfer の to が本コントラクトかを判定するために用いる.
      */
     function supportsInterface(bytes4 interfaceId)
-        external
+        public
         pure
         override
         returns (bool)
@@ -138,7 +138,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * @param account The address of the account.
      */
     function totalReceived(address account)
-        external
+        public
         view
         returns (uint256)
     {
@@ -150,7 +150,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * @param account The address of the account.
      */
     function alreadyReleased(address account)
-        external
+        public
         view
         returns (uint256)
     {
@@ -162,7 +162,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * @param account The address of the account.
      */
     function shares(address account)
-        external
+        public
         view
         returns (uint256)
     {
@@ -180,7 +180,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * @dev 現在の分配を受けるアカウント一覧を取得
      */
     function allPayees()
-        external
+        public
         view
         returns (address[] memory)
     {
