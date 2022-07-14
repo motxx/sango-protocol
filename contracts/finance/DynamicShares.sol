@@ -20,13 +20,13 @@ contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
     event ERC20PaymentReleased(IERC20 indexed token, address to, uint256 amount);
     event PaymentReceived(address from, uint256 amount);
 
-    uint256 private _totalShares;
+    uint256 internal _totalShares;
 
     mapping(address => uint256) private _totalReceived;
     mapping(address => uint256) private _alreadyReleased;
-    mapping(address => uint256) private _shares;
 
-    address[] private _payees;
+    address[] internal _payees;
+    mapping(address => uint256) internal _shares;
 
     IERC20 private _token;
 
@@ -68,6 +68,7 @@ contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
 
     function addPayee(address payee, uint256 share)
         public
+        virtual
         onlyOwner
     {
         _payees.push(payee);

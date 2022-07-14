@@ -3,6 +3,7 @@ pragma solidity 0.8.7;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { DynamicShares } from "./finance/DynamicShares.sol";
+import { CETBurnerShares } from "./CETBurnerShares.sol";
 
 /**
  * @dev SangoContent に流入した RBT を Creator, CET Burner,
@@ -10,7 +11,7 @@ import { DynamicShares } from "./finance/DynamicShares.sol";
  */
 contract RBTProportions is DynamicShares {
     DynamicShares private _creatorShares;
-    DynamicShares private _cetBurnerShares;
+    CETBurnerShares private _cetBurnerShares;
     DynamicShares private _cbtStakerShares;
     DynamicShares private _primaryShares;
 
@@ -21,7 +22,7 @@ contract RBTProportions is DynamicShares {
     {
         _rbt = rbt;
         _creatorShares = new DynamicShares(_rbt);
-        _cetBurnerShares = new DynamicShares(_rbt);
+        _cetBurnerShares = new CETBurnerShares(_rbt);
         _cbtStakerShares = new DynamicShares(_rbt);
         _primaryShares = new DynamicShares(_rbt);
     }
