@@ -19,6 +19,7 @@ contract RBTProportions is DynamicShares {
     constructor(IERC20 rbt)
         DynamicShares(rbt)
     {
+        _rbt = rbt;
         _creatorShares = new DynamicShares(_rbt);
         _cetBurnerShares = new DynamicShares(_rbt);
         _cbtStakerShares = new DynamicShares(_rbt);
