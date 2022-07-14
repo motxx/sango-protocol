@@ -39,7 +39,7 @@ contract RBTProportions is DynamicShares {
         virtual
     {
         require(creatorProp + cetBurnerProp + cbtStakerProp + primaryProp <= 10000,
-            "SangoContent: sum proportions <= 10000");
+            "RBTProportions: sum proportions <= 10000");
 
         resetPayees();
         addPayee(address(_creatorShares), creatorProp);
