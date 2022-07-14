@@ -56,6 +56,61 @@ contract RBTProportions is DynamicShares {
     }
 
     /**
+     * @dev Creator の分配率を取得.
+     */
+    function creatorProportion()
+        public
+        view
+        returns (uint32)
+    {
+        return uint32(shares(address(_creatorShares)));
+    }
+
+    /**
+     * @dev CET Burner の分配率を取得.
+     */
+    function cetBurnerProportion()
+        public
+        view
+        returns (uint32)
+    {
+        return uint32(shares(address(_cetBurnerShares)));
+    }
+
+    /**
+     * @dev CBT Staker の分配率を取得.
+     */
+    function cbtStakerProportion()
+        public
+        view
+        returns (uint32)
+    {
+        return uint32(shares(address(_cbtStakerShares)));
+    }
+
+    /**
+     * @dev Primary の分配率を取得.
+     */
+    function primaryProportion()
+        public
+        view
+        returns (uint32)
+    {
+        return uint32(shares(address(_primaryShares)));
+    }
+
+    /**
+     * @dev Treasury の分配率を取得.
+     */
+    function treasuryProportion()
+        public
+        view
+        returns (uint32)
+    {
+        return uint32(shares(address(this)));
+    }
+
+    /**
      * @dev Primary に受領者を追加.
      */
     function addPrimaryPayee(address payee, uint32 share)
