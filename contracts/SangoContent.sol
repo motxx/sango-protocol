@@ -11,12 +11,14 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
 
     mapping(address => bool) private _isPrimary;
 
-    IERC20 private _rbt;
-
-    constructor(IERC20 rbt)
+    constructor(IERC20 rbt, address[] memory primaries, uint32[] memory shares)
         RBTProportions(rbt)
     {
-        _rbt = rbt;
+        require (primaries.length == shares.length, "SangoContent: mismatch length");
+        for (uint i = 0; i < primaries.length;) {
+            _addPrimary(primaries[i], shares[i]);
+            unchecked { i++; }
+        }
     }
 
     /// @inheritdoc ISangoContent
@@ -37,14 +39,27 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         );
     }
 
-    /// @inheritdoc ISangoContent
-    function addPrimary(address primary, uint32 share)
-        external
-        override
+    // #############################
+    // ## Contents Royalty Graph  ##
+    // #############################
+    /**
+     * @notice RBTの受け取るChildを設定する。主に二次創作など、リスペクトする対象でありRoyaltyの
+     * 一部を渡したいコンテンツが有る場合Childとして指定する。
+     * Note: primary からCET経由で RBT を受け取った場合、addPrimaryのContentsにはRBTを分配しない
+     *
+     * @param primary RBTを受け取る Sango Contents の Contract Addr
+     * @param share  Primary
+     *               複数のChildがある場合、個々のWeight / 全体のWeight でRBTが決定される
+     */
+    function _addPrimary(address primary, uint32 share)
+        internal
         onlyOwner
     {
-        require(!_isPrimary[primary], "SangoContent: it is already primary");
+        // 多重辺のないDAGを保証する
+        require(primary != address(this), "SangoContent: self loop"); // レアケースと思われる.
+        require(!_isPrimary[primary], "SangoContent: already primary");
         _isPrimary[primary] = true;
+
         RBTProportions.addPrimaryPayee(primary, share);
         emit AddPrimary(address(this), primary, share);
     }

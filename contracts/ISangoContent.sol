@@ -17,17 +17,6 @@ interface ISangoContent {
     // ## Contents Royalty Graph  ##
     // #############################
     /**
-     * @notice RBTの受け取るChildを設定する。主に二次創作など、リスペクトする対象でありRoyaltyの
-     * 一部を渡したいコンテンツが有る場合Childとして指定する。
-     * Note: primary からCET経由で RBT を受け取った場合、addPrimaryのContentsにはRBTを分配しない 
-     *
-     * @param primary RBTを受け取る Sango Contents の Contract Addr
-     * @param weight Primary
-     *               複数のChildがある場合、個々のWeight / 全体のWeight でRBTが決定される
-     */
-    function addPrimary(address primary, uint32 weight) external; // onlyOwner
-
-    /**
      * @notice RBTの受け取るPrimary一覧を取得する
      */
     function getPrimaries() external view returns (address[] memory);
