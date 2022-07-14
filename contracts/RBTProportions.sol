@@ -36,6 +36,7 @@ contract RBTProportions is DynamicShares {
         uint32 primaryProp
     )
         public
+        virtual
     {
         require(creatorProp + cetBurnerProp + cbtStakerProp + primaryProp <= 10000,
             "SangoContent: sum proportions <= 10000");
