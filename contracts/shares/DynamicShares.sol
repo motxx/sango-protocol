@@ -68,6 +68,7 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
         _totalShares = 0;
         for (uint32 i = 0; i < _payees.length;) {
             _isPayee[_payees[i]] = false;
+            _shares[_payees[i]] = 0;
             unchecked { i++; }
         }
         delete _payees;
@@ -191,14 +192,7 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
         view
         returns (uint256)
     {
-        for (uint32 i = 0; i < _payees.length;) {
-            // XXX: initShares() で shares は初期化されないため判定が必要
-            if (_payees[i] == account) {
-                return _shares[account];
-            }
-            unchecked { i++; }
-        }
-        return 0;
+        return _shares[account];
     }
 
     /**
