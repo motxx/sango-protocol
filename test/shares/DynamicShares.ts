@@ -24,8 +24,8 @@ describe("DynamicShares", () => {
     rbt = await RBT.deploy();
     await rbt.deployed();
 
-    const DynamicShares = await ethers.getContractFactory("DynamicShares");
-    dShares = await DynamicShares.deploy(rbt.address);
+    const MockShares = await ethers.getContractFactory("MockShares");
+    dShares = await MockShares.deploy(rbt.address);
     await dShares.deployed();
   });
 
