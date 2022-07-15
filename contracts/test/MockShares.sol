@@ -11,8 +11,10 @@ import { DynamicShares } from "../shares/DynamicShares.sol";
 contract MockShares is DynamicShares {
     using Address for address;
 
+    uint32 constant public MAX_PAYEES = 100;
+
     constructor(IERC20 rbt)
-        DynamicShares(rbt)
+        DynamicShares(rbt, MAX_PAYEES)
     {
     }
 

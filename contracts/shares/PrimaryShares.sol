@@ -11,8 +11,10 @@ import { DynamicShares } from "./DynamicShares.sol";
 contract PrimaryShares is DynamicShares {
     using Address for address;
 
+    uint32 constant public MAX_PRIMARIES = 128;
+
     constructor(IERC20 rbt)
-        DynamicShares(rbt)
+        DynamicShares(rbt, MAX_PRIMARIES)
     {
     }
 

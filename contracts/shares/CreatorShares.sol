@@ -11,8 +11,10 @@ import { DynamicShares } from "./DynamicShares.sol";
 contract CreatorShares is DynamicShares {
     using Address for address;
 
+    uint32 constant public MAX_CREATORS = 128;
+
     constructor(IERC20 rbt)
-        DynamicShares(rbt)
+        DynamicShares(rbt, MAX_CREATORS)
     {
     }
 

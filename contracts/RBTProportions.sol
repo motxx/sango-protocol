@@ -21,8 +21,11 @@ contract RBTProportions is DynamicShares {
 
     IERC20 private _rbt;
 
+    // Creators, CET Burners, CBTStakers, Primaries, Treasury
+    uint32 constant public MAX_PAYEES = 5;
+
     constructor(IERC20 rbt)
-        DynamicShares(rbt)
+        DynamicShares(rbt, MAX_PAYEES)
     {
         _rbt = rbt;
         _creatorShares = new CreatorShares(_rbt);

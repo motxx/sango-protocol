@@ -13,8 +13,10 @@ import { DynamicShares } from "./DynamicShares.sol";
 contract CETBurnerShares is DynamicShares {
     using Address for address;
 
+    uint32 constant public MAX_CET_BURNERS = 1024;
+
     constructor(IERC20 rbt)
-        DynamicShares(rbt)
+        DynamicShares(rbt, MAX_CET_BURNERS)
     {
     }
 
