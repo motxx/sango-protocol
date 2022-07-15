@@ -126,6 +126,42 @@ contract RBTProportions is DynamicShares {
         return uint32(shares(address(this)));
     }
 
+    function releaseCreatorShares(address account)
+        public
+    {
+        if (pendingPaymentExists(address(_creatorShares))) {
+            release(address(_creatorShares));
+        }
+        _creatorShares.release(account);
+    }
+
+    function releaseCETBurnerShares(address account)
+        public
+    {
+        if (pendingPaymentExists(address(_cetBurnerShares))) {
+            release(address(_cetBurnerShares));
+        }
+        _cetBurnerShares.release(account);
+    }
+
+    function releaseCBTStakerShares(address account)
+        public
+    {
+        if (pendingPaymentExists(address(_cbtStakerShares))) {
+            release(address(_cbtStakerShares));
+        }
+        _cbtStakerShares.release(account);
+    }
+
+    function releasePrimaryShares(address account)
+        public
+    {
+        if (pendingPaymentExists(address(_primaryShares))) {
+            release(address(_primaryShares));
+        }
+        _primaryShares.release(account);
+    }
+
     /**
      * @dev CreatorShares の取得
      */
