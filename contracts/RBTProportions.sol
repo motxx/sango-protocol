@@ -2,29 +2,36 @@
 pragma solidity 0.8.7;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { DynamicShares } from "./finance/DynamicShares.sol";
-import { CETBurnerShares } from "./CETBurnerShares.sol";
+import { CETBurnerShares } from "./shares/CETBurnerShares.sol";
+import { DynamicShares } from "./shares/DynamicShares.sol";
+import { CreatorShares } from "./shares/CreatorShares.sol";
+import { CETBurnerShares } from "./shares/CETBurnerShares.sol";
+import { CBTStakerShares } from "./shares/CBTStakerShares.sol";
+import { PrimaryShares } from "./shares/PrimaryShares.sol";
 
 /**
  * @dev SangoContent に流入した RBT を Creator, CET Burner,
  * CBT Staker, Primaries に分配する. 余剰分は Treasury に蓄積される.
  */
 contract RBTProportions is DynamicShares {
-    DynamicShares private _creatorShares;
+    CreatorShares private _creatorShares;
     CETBurnerShares private _cetBurnerShares;
-    DynamicShares private _cbtStakerShares;
-    DynamicShares private _primaryShares;
+    CBTStakerShares private _cbtStakerShares;
+    PrimaryShares private _primaryShares;
 
     IERC20 private _rbt;
 
+    // Creators, CET Burners, CBTStakers, Primaries, Treasury
+    uint32 constant public MAX_PAYEES = 5;
+
     constructor(IERC20 rbt)
-        DynamicShares(rbt)
+        DynamicShares(rbt, MAX_PAYEES)
     {
         _rbt = rbt;
-        _creatorShares = new DynamicShares(_rbt);
+        _creatorShares = new CreatorShares(_rbt);
         _cetBurnerShares = new CETBurnerShares(_rbt);
-        _cbtStakerShares = new DynamicShares(_rbt);
-        _primaryShares = new DynamicShares(_rbt);
+        _cbtStakerShares = new CBTStakerShares(_rbt);
+        _primaryShares = new PrimaryShares(_rbt);
     }
 
     /**
@@ -42,17 +49,17 @@ contract RBTProportions is DynamicShares {
         require(creatorProp + cetBurnerProp + cbtStakerProp + primaryProp <= 10000,
             "RBTProportions: sum proportions <= 10000");
 
-        resetPayees();
-        addPayee(address(_creatorShares), creatorProp);
-        addPayee(address(_cetBurnerShares), cetBurnerProp);
-        addPayee(address(_cbtStakerShares), cbtStakerProp);
-        addPayee(address(_primaryShares), primaryProp);
+        _resetPayees();
+        _addPayee(address(_creatorShares), creatorProp);
+        _addPayee(address(_cetBurnerShares), cetBurnerProp);
+        _addPayee(address(_cbtStakerShares), cbtStakerProp);
+        _addPayee(address(_primaryShares), primaryProp);
 
         uint256 treasuryProp =
             10000 - (creatorProp + cetBurnerProp + cbtStakerProp + primaryProp);
         if (treasuryProp > 0) {
             // 10000 未満の場合、余剰分が Treasury に蓄積する.
-            addPayee(address(this), treasuryProp);
+            _addPayee(address(this), treasuryProp);
         }
     }
 
@@ -112,59 +119,50 @@ contract RBTProportions is DynamicShares {
     }
 
     /**
-     * @dev Primary に受領者を追加.
+     * @dev CreatorShares の取得
      */
-    function addPrimaryPayee(address payee, uint32 share)
-        public
-    {
-        _primaryShares.addPayee(payee, share);
-    }
-
-    /**
-     * @dev Primary 一覧の取得
-     */
-    function getPrimaries()
-        public
+    function _getCreatorShares()
+        internal
         view
         virtual
-        returns (address[] memory)
+        returns (CreatorShares)
     {
-        return _primaryShares.allPayees();
+        return _creatorShares;
     }
 
     /**
-     * @dev 指定した Creator の RBT を引き落とす
+     * @dev CETBurnerShares の取得
      */
-    function releaseCreator(address account)
-        public
+    function _getCETBurnerShares()
+        internal
+        view
+        virtual
+        returns (CETBurnerShares)
     {
-        _creatorShares.release(account);
+        return _cetBurnerShares;
     }
 
     /**
-     * @dev 指定した CET Burner の RBT を引き落とす
+     * @dev CBTStakerShares の取得
      */
-    function releaseCETBurner(address account)
-        public
+    function _getCBTStakerShares()
+        internal
+        view
+        virtual
+        returns (CBTStakerShares)
     {
-        _cetBurnerShares.release(account);
+        return _cbtStakerShares;
     }
 
     /**
-     * @dev 指定した CBT Staker の RBT を引き落とす
+     * @dev PrimaryShares の取得
      */
-    function releaseCBTStaker(address account)
-        public
+    function _getPrimaryShares()
+        internal
+        view
+        virtual
+        returns (PrimaryShares)
     {
-        _cbtStakerShares.release(account);
-    }
-
-    /**
-     * @dev 指定した Primary の RBT を引き落とす
-     */
-    function releasePrimary(address account)
-        public
-    {
-        _primaryShares.release(account);
+        return _primaryShares;
     }
 }

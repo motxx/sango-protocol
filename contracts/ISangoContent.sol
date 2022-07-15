@@ -16,6 +16,7 @@ interface ISangoContent {
     // #############################
     // ## Contents Royalty Graph  ##
     // #############################
+
     /**
      * @notice RBTの受け取るPrimary一覧を取得する
      */
