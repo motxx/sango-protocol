@@ -115,6 +115,6 @@ describe("ExchangeService", () => {
 
       await exchangeService.connect(s2).burn(10);
       expect(await exchangeService.totalSupply()).to.equal(990);
-    })
+    });
   });
 });
