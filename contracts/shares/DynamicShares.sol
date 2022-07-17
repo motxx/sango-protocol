@@ -123,6 +123,20 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
     }
 
     /**
+     * @dev Check pending payments exists for specified account.
+     */
+    function pendingPaymentExists(address account)
+        public
+        view
+        returns (bool)
+    {
+        require(account != address(this), "DynamicShares: self payment loop");
+        uint256 payment = _totalReceived[account] - _alreadyReleased[account];
+        return payment > 0;
+    }
+
+
+    /**
      * @dev ERC20のトークンを受け取った際の分配.
      * 分配対象が未設定の場合、revertされる.
      * (mintやreleaseによる、ERC20のtransferが失敗する.)

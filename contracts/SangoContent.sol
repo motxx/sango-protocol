@@ -15,12 +15,17 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         address[] memory creators,
         uint256[] memory creatorShares,
         address[] memory primaries,
-        uint256[] memory primaryShares
+        uint256[] memory primaryShares,
+        uint32 creatorProp,
+        uint32 cetBurnerProp,
+        uint32 cbtStakerProp,
+        uint32 primaryProp
     )
         RBTProportions(rbt)
     {
         _getCreatorShares().initPayees(creators, creatorShares);
         _getPrimaryShares().initPayees(primaries, primaryShares);
+        setRBTProportions(creatorProp, cetBurnerProp, cbtStakerProp, primaryProp);
     }
 
     /// @inheritdoc ISangoContent

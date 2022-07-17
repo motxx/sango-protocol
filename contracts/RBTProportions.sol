@@ -36,6 +36,14 @@ contract RBTProportions is DynamicShares {
 
     /**
      * @dev RBT の分配率(ベーシスポイント)を設定する. 分配率の再設定は常に可能.
+     *
+     * RBTの入手方法により分配が変化する
+     * 1) 直接 Royalty Provider から transfer された場合
+     *    この場合は、Creator / CET Burner / CBT Staker / Primaries に対して設定した比率で分配される
+     *    余剰分は Treasury として SangoContent に残る.
+     *
+     * 2) TODO: Primary より CET Burner として分配された場合
+     *    この場合は、Primaries を除いた Creator / CET Burner / CBT Staker に対して設定した比率が拡張され分配される
      */
     function setRBTProportions(
         uint32 creatorProp,
@@ -116,6 +124,42 @@ contract RBTProportions is DynamicShares {
         returns (uint32)
     {
         return uint32(shares(address(this)));
+    }
+
+    function releaseCreatorShares(address account)
+        public
+    {
+        if (pendingPaymentExists(address(_creatorShares))) {
+            release(address(_creatorShares));
+        }
+        _creatorShares.release(account);
+    }
+
+    function releaseCETBurnerShares(address account)
+        public
+    {
+        if (pendingPaymentExists(address(_cetBurnerShares))) {
+            release(address(_cetBurnerShares));
+        }
+        _cetBurnerShares.release(account);
+    }
+
+    function releaseCBTStakerShares(address account)
+        public
+    {
+        if (pendingPaymentExists(address(_cbtStakerShares))) {
+            release(address(_cbtStakerShares));
+        }
+        _cbtStakerShares.release(account);
+    }
+
+    function releasePrimaryShares(address account)
+        public
+    {
+        if (pendingPaymentExists(address(_primaryShares))) {
+            release(address(_primaryShares));
+        }
+        _primaryShares.release(account);
     }
 
     /**
