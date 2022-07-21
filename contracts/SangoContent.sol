@@ -37,6 +37,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     )
         public
         override(ISangoContent, RBTProportions)
+        /* onlyGovernance */
     {
         RBTProportions.setRBTProportions(
             creatorProp,
