@@ -7,7 +7,7 @@ import { Contract } from "ethers";
 
 chai.use(solidity);
 
-describe("SangoContent", async () => {
+describe("Content Royalty Graph", async () => {
   let rbt: Contract;
   let s1: SignerWithAddress;
 
@@ -85,5 +85,51 @@ describe("SangoContent", async () => {
       ...RBTProps,
     })).to.revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'DynamicShares: the payee already exists'");
+  });
+});
+
+describe("Content Excited Token", async () => {
+  let rbt: Contract;
+  let s1: SignerWithAddress;
+  let sango: Contract;
+  let excitingModule: Contract;
+  let cet: Contract;
+
+  const RBTProps = {
+    creatorProp: 2000,
+    cetBurnerProp: 2000,
+    cbtStakerProp: 2000,
+    primaryProp: 2000,
+  };
+
+  beforeEach(async () => {
+    [, s1] = await ethers.getSigners();
+
+    const RBT = await ethers.getContractFactory("RBT");
+    rbt = await RBT.deploy();
+    sango = await deploySango({
+      rbtAddress: rbt.address,
+      creators: [s1.address],
+      creatorShares: [1],
+      primaries: [] as string[],
+      primaryShares: [] as number[],
+      ...RBTProps,
+    });
+    const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
+    excitingModule = await ExcitingModule.deploy();
+    cet = await ethers.getContractAt("CET", await sango.cet());
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mockOracle = await MockOracle.deploy();
+    await excitingModule.setCETOracle(cet.address, mockOracle.address);
+  });
+
+  it("Should mintCET / burnCET", async () => {
+    await sango.setExcitingModules([excitingModule.address]);
+    await sango.approveCETReceiver(s1.address);
+    await sango.mintCET(s1.address);
+    expect(await cet.balanceOf(s1.address)).to.equal(10000);
+    await sango.connect(s1).burnCET(9000);
+    expect(await sango.getBurnedCET(s1.address)).to.equal(9000);
+    expect(await cet.balanceOf(s1.address)).to.equal(1000);
   });
 });

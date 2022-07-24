@@ -12,6 +12,8 @@ export type SangoCtorArgs = {
   cetBurnerProp: number;
   cbtStakerProp: number;
   primaryProp: number;
+  cetName?: string;
+  cetSymbol?: string;
 };
 
 export type DeploySangoFunction = (args: SangoCtorArgs) => Promise<Contract>;
@@ -28,6 +30,8 @@ export const deploySango = async (args: SangoCtorArgs) => {
     args.cetBurnerProp,
     args.cbtStakerProp,
     args.primaryProp,
+    args.cetName ?? "Content Excited Token",
+    args.cetSymbol ?? "CET",
   );
   await sango.deployed();
   return sango;
@@ -45,6 +49,8 @@ export const deploySangoBy = async (deployer: SignerWithAddress, args: SangoCtor
     args.cetBurnerProp,
     args.cbtStakerProp,
     args.primaryProp,
+    args.cetName ?? "Content Excited Token",
+    args.cetSymbol ?? "CET",
   );
   await sango.deployed();
   return sango;
