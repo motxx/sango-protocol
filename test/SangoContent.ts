@@ -92,7 +92,6 @@ describe("Content Excited Token", async () => {
   let rbt: Contract;
   let s1: SignerWithAddress;
   let sango: Contract;
-  let excitingModule: Contract;
   let cet: Contract;
 
   const RBTProps = {
@@ -115,21 +114,58 @@ describe("Content Excited Token", async () => {
       primaryShares: [] as number[],
       ...RBTProps,
     });
-    const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
-    excitingModule = await ExcitingModule.deploy();
     cet = await ethers.getContractAt("CET", await sango.cet());
-    const MockOracle = await ethers.getContractFactory("MockOracle");
-    const mockOracle = await MockOracle.deploy();
-    await excitingModule.setCETOracle(cet.address, mockOracle.address);
   });
 
   it("Should mintCET / burnCET", async () => {
-    await sango.setExcitingModules([excitingModule.address]);
+    const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
+    const em1 = await ExcitingModule.deploy();
+    const cet = await ethers.getContractAt("CET", await sango.cet());
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mo1 = await MockOracle.deploy();
+
+    await em1.setCETOracle(cet.address, mo1.address);
+
+    await sango.setExcitingModules([em1.address]);
     await sango.approveCETReceiver(s1.address);
     await sango.mintCET(s1.address);
     expect(await cet.balanceOf(s1.address)).to.equal(10000);
     await sango.connect(s1).burnCET(9000);
     expect(await sango.getBurnedCET(s1.address)).to.equal(9000);
     expect(await cet.balanceOf(s1.address)).to.equal(1000);
+  });
+
+  it("Should mintCET by multiple exciting modules", async () => {
+    const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
+    const em1 = await ExcitingModule.deploy();
+    const em2 = await ExcitingModule.deploy();
+
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mo1 = await MockOracle.deploy();
+    const mo2 = await MockOracle.deploy();
+
+    await em1.setCETOracle(cet.address, mo1.address);
+    await em2.setCETOracle(cet.address, mo2.address);
+
+    await sango.setExcitingModules([em1.address, em2.address]);
+    await sango.approveCETReceiver(s1.address);
+    await sango.mintCET(s1.address);
+    expect(await cet.balanceOf(s1.address)).to.equal(20000);
+  });
+
+  it("Should not mintCET if no additional engagement got", async () => {
+    const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
+    const em1 = await ExcitingModule.deploy();
+
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mo1 = await MockOracle.deploy();
+
+    await em1.setCETOracle(cet.address, mo1.address);
+
+    await sango.setExcitingModules([em1.address]);
+    await sango.approveCETReceiver(s1.address);
+    await sango.mintCET(s1.address);
+    await expect(sango.mintCET(s1.address)).to.revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'ExcitingModule: no amount to mint'");
   });
 });
