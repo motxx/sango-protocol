@@ -29,10 +29,11 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
         override
         onlyOwner
     {
-        require (_depositAmount[account] > 0, "WrappedCBT: no amount deposited");
-        require (IERC20(_cbt).balanceOf(address(this)) >= _depositAmount[account], "WrappedCBT: lack of CBT balance");
-
         uint256 amount = _depositAmount[account];
+
+        require (amount > 0, "WrappedCBT: no amount deposited");
+        require (IERC20(_cbt).balanceOf(address(this)) >= amount, "WrappedCBT: lack of CBT balance");
+
         _depositAmount[account] = 0;
 
         _burn(account, amount);
