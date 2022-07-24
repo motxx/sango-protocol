@@ -5,9 +5,9 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ISangoContent } from "./ISangoContent.sol";
-import { RBTProportions } from "./RBTProportions.sol";
 import { CET } from "./CET.sol";
 import { IExcitingModule } from "./components/IExcitingModule.sol";
+import { RBTProportions } from "./shares/RBTProportions.sol";
 import { ICET } from "./tokens/ICET.sol";
 
 contract SangoContent is ISangoContent, Ownable, RBTProportions {

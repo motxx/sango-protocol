@@ -2,12 +2,12 @@
 pragma solidity 0.8.7;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { CETBurnerShares } from "./shares/CETBurnerShares.sol";
-import { DynamicShares } from "./shares/DynamicShares.sol";
-import { CreatorShares } from "./shares/CreatorShares.sol";
-import { CETBurnerShares } from "./shares/CETBurnerShares.sol";
-import { CBTStakerShares } from "./shares/CBTStakerShares.sol";
-import { PrimaryShares } from "./shares/PrimaryShares.sol";
+import { CETBurnerShares } from "./CETBurnerShares.sol";
+import { DynamicShares } from "./DynamicShares.sol";
+import { CreatorShares } from "./CreatorShares.sol";
+import { CETBurnerShares } from "./CETBurnerShares.sol";
+import { CBTStakerShares } from "./CBTStakerShares.sol";
+import { PrimaryShares } from "./PrimaryShares.sol";
 
 /**
  * @dev SangoContent に流入した RBT を Creator, CET Burner,
