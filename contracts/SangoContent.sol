@@ -8,6 +8,7 @@ import { ISangoContent } from "./ISangoContent.sol";
 import { RBTProportions } from "./RBTProportions.sol";
 import { CET } from "./CET.sol";
 import { IExcitingModule } from "./components/IExcitingModule.sol";
+import { ICET } from "./tokens/ICET.sol";
 
 contract SangoContent is ISangoContent, Ownable, RBTProportions {
     using Address for address;
@@ -56,12 +57,30 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     }
 
     /// @inheritdoc ISangoContent
-    function setExcitingModules(IExcitingModule[] calldata excitingModules)
+    function setExcitingModules(IExcitingModule[] calldata newExcitingModules)
         external
         override
         /* onlyGovernance */
     {
-        _excitingModules = excitingModules;
+        for (uint32 i = 0; i < _excitingModules.length;) {
+            _cet.revokeExcitingModule(_excitingModules[i]);
+            unchecked { i++; }
+        }
+        for (uint32 i = 0; i < newExcitingModules.length;) {
+            _cet.grantExcitingModule(newExcitingModules[i]);
+            unchecked { i++; }
+        }
+        _excitingModules = newExcitingModules;
+    }
+
+    /// @inheritdoc ISangoContent
+    function excitingModules()
+        external
+        view
+        override
+        returns (IExcitingModule[] memory)
+    {
+        return _excitingModules;
     }
 
     // #############################
@@ -82,6 +101,10 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     // ## Contents Excited Token  ##
     // #############################
 
+    // ######################
+    // ## Governance Roles ##
+    // ######################
+
     /// @inheritdoc ISangoContent
     function approveCETReceiver(address account)
         external
@@ -91,12 +114,13 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         _cet.approveCETReceiver(account);
     }
 
-    function cet()
+    /// @inheritdoc ISangoContent
+    function disapproveCETReceiver(address account)
         external
-        view
-        returns (CET)
+        override
+        /* onlyGovernance */
     {
-        return _cet;
+        _cet.disapproveCETReceiver(account);
     }
 
     /// @inheritdoc ISangoContent
@@ -110,6 +134,10 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
             unchecked { i++; }
         }
     }
+
+    // ######################
+    // ## Public functions ##
+    // ######################
 
     /// @inheritdoc ISangoContent
     function burnCET(uint256 amount)
@@ -127,5 +155,15 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         returns (uint256)
     {
         return _cet.burnedAmount(account);
+    }
+
+    /// @inheritdoc ISangoContent
+    function cet()
+        external
+        view
+        override
+        returns (ICET)
+    {
+        return _cet;
     }
 }
