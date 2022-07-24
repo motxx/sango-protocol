@@ -11,6 +11,7 @@ import { DynamicShares } from "./DynamicShares.sol";
 contract CBTStakerShares is DynamicShares {
     using Address for address;
 
+    // TODO: 128でreleaseにgasが問題ないか調査.
     uint32 constant public MAX_CBT_STAKERS = 128;
 
     constructor(IERC20 rbt)

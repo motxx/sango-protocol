@@ -13,6 +13,8 @@ import { DynamicShares } from "./DynamicShares.sol";
 contract CETBurnerShares is DynamicShares {
     using Address for address;
 
+    // プロジェクト別にCET Burnerが存在するので、最大値は1024でも多い方.
+    // TODO: 1024でreleaseにgasが問題ないか調査.
     uint32 constant public MAX_CET_BURNERS = 1024;
 
     constructor(IERC20 rbt)
