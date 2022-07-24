@@ -118,13 +118,16 @@ describe("Content Excited Token", async () => {
     const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
     excitingModule = await ExcitingModule.deploy();
     cet = await ethers.getContractAt("CET", await sango.cet());
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mockOracle = await MockOracle.deploy();
+    await excitingModule.setCETOracle(cet.address, mockOracle.address);
   });
 
   it("Should mintCET / burnCET", async () => {
     await sango.setExcitingModules([excitingModule.address]);
     await sango.approveCETReceiver(s1.address);
     await sango.mintCET(s1.address);
-    expect(await cet.balanceOf(s1.address)).to.equal(10000); // Mock
+    expect(await cet.balanceOf(s1.address)).to.equal(10000);
     await sango.connect(s1).burnCET(9000);
     expect(await sango.getBurnedCET(s1.address)).to.equal(9000);
     expect(await cet.balanceOf(s1.address)).to.equal(1000);

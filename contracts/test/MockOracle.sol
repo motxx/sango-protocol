@@ -5,7 +5,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IOracle, Response } from "../oracles/IOracle.sol";
 import { ICET } from "../tokens/ICET.sol";
 
-contract MockOracleLink is IOracle, Ownable {
+contract MockOracle is IOracle, Ownable {
     mapping (ICET => mapping (address => string)) private _mockIds;
     mapping (ICET => mapping (address => Response)) private _responses;
 

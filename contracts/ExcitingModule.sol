@@ -35,7 +35,7 @@ contract ExcitingModule is IExcitingModule, Ownable {
         view
         returns (uint256)
     {
-        require (address(_oracles[cet]) == address(0), "ExcitingModule: no oracle set");
+        require (address(_oracles[cet]) != address(0), "ExcitingModule: no oracle set");
         return _oracles[cet].responses(cet, account).totalEngagement;
     }
 }
