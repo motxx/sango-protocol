@@ -23,6 +23,11 @@ interface ISangoContent {
      */
     function setExcitingModules(IExcitingModule[] calldata excitingModules) external;
 
+    /**
+     * @dev 登録済みの ExcitingModule 一覧を返す.
+     */
+    function excitingModules() external view returns (IExcitingModule[] memory);
+
     // #############################
     // ## Contents Royalty Graph  ##
     // #############################
@@ -37,11 +42,18 @@ interface ISangoContent {
     // #############################
 
     /**
-     * @notice CETを受け取るAddr(Wallet / Contract)を許可する.
+     * @notice Addr(Wallet / Contract)にCETを受け取る権利を与える.
      *
      * @param account CETを受け取るアドレス
      */
     function approveCETReceiver(address account) external;
+
+    /**
+     * @notice Addr(Wallet / Contract)からCETを受け取る権利を剥奪する.
+     *
+     * @param account CETを受け取る権利を剥奪するアドレス
+     */
+    function disapproveCETReceiver(address account) external;
 
     /**
      * @notice 登録してある Exciting Module に対し Mint CET を実行を要求する

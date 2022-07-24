@@ -56,12 +56,30 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     }
 
     /// @inheritdoc ISangoContent
-    function setExcitingModules(IExcitingModule[] calldata excitingModules)
+    function setExcitingModules(IExcitingModule[] calldata newExcitingModules)
         external
         override
         /* onlyGovernance */
     {
-        _excitingModules = excitingModules;
+        for (uint32 i = 0; i < _excitingModules.length;) {
+            _cet.revokeExcitingModule(_excitingModules[i]);
+            unchecked { i++; }
+        }
+        for (uint32 i = 0; i < newExcitingModules.length;) {
+            _cet.grantExcitingModule(newExcitingModules[i]);
+            unchecked { i++; }
+        }
+        _excitingModules = newExcitingModules;
+    }
+
+    /// @inheritdoc ISangoContent
+    function excitingModules()
+        external
+        view
+        override
+        returns (IExcitingModule[] memory)
+    {
+        return _excitingModules;
     }
 
     // #############################
@@ -89,6 +107,15 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         /* onlyGovernance */
     {
         _cet.approveCETReceiver(account);
+    }
+
+    /// @inheritdoc ISangoContent
+    function disapproveCETReceiver(address account)
+        external
+        override
+        /* onlyGovernance */
+    {
+        _cet.disapproveCETReceiver(account);
     }
 
     function cet()
