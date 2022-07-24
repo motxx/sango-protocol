@@ -10,7 +10,7 @@ import { ICET } from "./tokens/ICET.sol";
 
 contract CET is ERC20, ICET, AccessControl {
     mapping (address => uint256) private _burnedAmount;
-    mapping (address => bool) private _approveReceivers; // ホワイトリスト形式
+    mapping (address => bool) private _approvedReceivers; // ホワイトリスト形式
 
     bytes32 constant public EXCITING_MODULE_ROLE = keccak256("EXCITING_MODULE_ROLE");
     bytes32 constant public SANGO_CONTENT_ROLE = keccak256("SANGO_CONTENT_ROLE");
@@ -49,7 +49,7 @@ contract CET is ERC20, ICET, AccessControl {
         override
         onlyRole(EXCITING_MODULE_ROLE)
     {
-        require (_approveReceivers[account], "SangoContent: account is not approved");
+        require (_approvedReceivers[account], "SangoContent: account is not approved");
         _mint(account, amount);
     }
 
@@ -63,7 +63,7 @@ contract CET is ERC20, ICET, AccessControl {
         override
         onlyRole(SANGO_CONTENT_ROLE)
     {
-        require (_approveReceivers[account], "SangoContent: account is not approved");
+        require (_approvedReceivers[account], "SangoContent: account is not approved");
         _burnedAmount[account] += amount;
         _burn(account, amount);
     }
@@ -74,7 +74,7 @@ contract CET is ERC20, ICET, AccessControl {
         override
         onlyRole(SANGO_CONTENT_ROLE)
     {
-        _approveReceivers[account] = true;
+        _approvedReceivers[account] = true;
     }
 
     /// @inheritdoc ICET
@@ -83,7 +83,7 @@ contract CET is ERC20, ICET, AccessControl {
         override
         onlyRole(SANGO_CONTENT_ROLE)
     {
-        _approveReceivers[account] = false;
+        _approvedReceivers[account] = false;
     }
 
     /// @inheritdoc ICET
