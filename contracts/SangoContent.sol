@@ -98,7 +98,64 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     }
 
     // #############################
-    // ## Contents Excited Token  ##
+    // ## Content Believe Token   ##
+    // #############################
+
+    /// @inheritdoc ISangoContent
+    function isStaking(address account)
+        external
+        view
+        override
+        returns (bool)
+    {
+        revert ("TODO");
+    }
+
+    /// @inheritdoc ISangoContent
+    function stake(uint256 amount)
+        external
+        override
+    {
+        revert ("TODO");
+    }
+
+    /// @inheritdoc ISangoContent
+    function requestUnstake()
+        external
+        override
+    {
+        revert ("TODO");
+    }
+
+    /// @inheritdoc ISangoContent
+    function acceptUnstakeRequest(address account)
+        external
+        override
+        onlyOwner
+    {
+        revert ("TODO");
+    }
+
+    /// @inheritdoc ISangoContent
+    function rejectUnstakeRequest(address account)
+        external
+        override
+        onlyOwner
+    {
+        revert ("TODO");
+    }
+
+    /// @inheritdoc ISangoContent
+    function setLockInterval(uint64 lockInterval)
+        external
+        override
+        onlyOwner
+    {
+        revert ("TODO");
+    }
+
+    // #############################
+    // ## Content Excited Token   ##
     // #############################
 
     // ######################

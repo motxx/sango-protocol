@@ -7,7 +7,7 @@ import { Contract } from "ethers";
 
 chai.use(solidity);
 
-describe("Content Royalty Graph", async () => {
+describe("Contents Royalty Graph", async () => {
   let rbt: Contract;
   let s1: SignerWithAddress;
 

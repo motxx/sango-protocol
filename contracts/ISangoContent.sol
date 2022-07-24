@@ -39,7 +39,52 @@ interface ISangoContent {
     function getPrimaries() external view returns (address[] memory);
 
     // #############################
-    // ## Contents Excited Token  ##
+    // ## Content Believe Token   ##
+    // #############################
+
+    /**
+     * @notice account がステークしているか確認
+     *
+     * @return ステークしている場合 True が帰る
+     */
+    function isStaking(address account) external view returns (bool);
+
+    /**
+     * @notice amount 分 stake する. 株式と同様で返済義務はない.
+     * stakeholder は wCBT を獲得し、ガバナンス権(暫定)を得る.
+     *
+     * @param amount stake するCBTの数量
+     */
+    function stake(uint256 amount) external;
+
+    /**
+     * @notice unstake を要求する. request は記録される.
+     */
+    function requestUnstake() external;
+
+    /**
+     * @notice unstake の要求を承諾し、全額(暫定)引き落とされる.
+     *
+     * @param account unstake を要求しているアカウント
+     */
+    function acceptUnstakeRequest(address account) external;
+
+    /**
+     * @notice unstake の要求を拒否する.
+     *
+     * @param account unstake を要求しているアカウント
+     */
+    function rejectUnstakeRequest(address account) external;
+
+    /**
+     * @notice ステークしてからRBTがもらえるようになるまでの期間を設定する
+     *
+     * @param lockInterval ステークしてから、RBT受け取る事ができるまでの期間
+     */
+    function setLockInterval(uint64 lockInterval) external;
+
+    // #############################
+    // ## Content Excited Token   ##
     // #############################
 
     /**
