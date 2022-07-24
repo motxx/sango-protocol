@@ -2,6 +2,7 @@
 pragma solidity 0.8.7;
 
 import { IExcitingModule } from "./components/IExcitingModule.sol";
+import { ICET } from "./tokens/ICET.sol";
 
 interface ISangoContent {
     /**
@@ -78,4 +79,9 @@ interface ISangoContent {
      * @param addr CETのBurn量を確認するAddr.
      */
     function getBurnedCET(address addr) external view returns (uint256);
+
+    /**
+     * @dev CETのアドレスを取得する.
+     */
+    function cet() external view returns (ICET);
 }

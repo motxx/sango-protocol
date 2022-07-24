@@ -8,6 +8,7 @@ import { ISangoContent } from "./ISangoContent.sol";
 import { RBTProportions } from "./RBTProportions.sol";
 import { CET } from "./CET.sol";
 import { IExcitingModule } from "./components/IExcitingModule.sol";
+import { ICET } from "./tokens/ICET.sol";
 
 contract SangoContent is ISangoContent, Ownable, RBTProportions {
     using Address for address;
@@ -118,14 +119,6 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         _cet.disapproveCETReceiver(account);
     }
 
-    function cet()
-        external
-        view
-        returns (CET)
-    {
-        return _cet;
-    }
-
     /// @inheritdoc ISangoContent
     function mintCET(address account)
         external
@@ -154,5 +147,15 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         returns (uint256)
     {
         return _cet.burnedAmount(account);
+    }
+
+    /// @inheritdoc ISangoContent
+    function cet()
+        external
+        view
+        override
+        returns (ICET)
+    {
+        return _cet;
     }
 }
