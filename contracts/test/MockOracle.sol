@@ -29,9 +29,9 @@ contract MockOracleLink is IOracle, Ownable {
     }
 
     /// @inheritdoc IOracle
-    function responses(ICET cet, address account)
+    function responses(ICET /* cet */, address /* account */)
         external
-        view
+        pure /* view */
         override
         returns (Response memory)
     {
