@@ -36,7 +36,6 @@ contract MockOracle is IOracle, Ownable {
         returns (Response memory)
     {
         return Response({
-            title: "MockTitle",
             totalEngagement: 10000
         });
     }

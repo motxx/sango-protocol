@@ -57,14 +57,12 @@ contract YouTubeLink is ChainlinkClient, IOracle, Ownable {
         bytes32 requestId,
         ICET cet,
         address account,
-        string calldata title,
         uint64 totalEngagement
     )
         public
         recordChainlinkFulfillment(requestId)
     {
         _responses[cet][account] = Response({
-            title: title,
             totalEngagement: totalEngagement
         });
     }

@@ -4,7 +4,6 @@ pragma solidity 0.8.7;
 import { ICET } from "../tokens/ICET.sol";
 
 struct Response {
-    string title;
     uint64 totalEngagement; // 再生回数など
 }
 
