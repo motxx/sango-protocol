@@ -101,6 +101,10 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     // ## Contents Excited Token  ##
     // #############################
 
+    // ######################
+    // ## Governance Roles ##
+    // ######################
+
     /// @inheritdoc ISangoContent
     function approveCETReceiver(address account)
         external
@@ -130,6 +134,10 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
             unchecked { i++; }
         }
     }
+
+    // ######################
+    // ## Public functions ##
+    // ######################
 
     /// @inheritdoc ISangoContent
     function burnCET(uint256 amount)
