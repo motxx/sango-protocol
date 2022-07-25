@@ -12,7 +12,7 @@ import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
     address private _cbt;
     uint256 private _minAmount;
-    mapping (address => uint256) private _depositAmount;
+    mapping (address => uint256) private _purchasedAmount;
 
     // ######################
     // ## Owner functions  ##
@@ -29,12 +29,12 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
         override
         onlyOwner
     {
-        uint256 amount = _depositAmount[account];
+        uint256 amount = _purchasedAmount[account];
 
         require (amount > 0, "WrappedCBT: no amount deposited");
         require (IERC20(_cbt).balanceOf(address(this)) >= amount, "WrappedCBT: lack of CBT balance");
 
-        _depositAmount[account] = 0;
+        _purchasedAmount[account] = 0;
 
         _burn(account, amount);
         IERC20(_cbt).transfer(account, amount);
@@ -65,7 +65,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
     {
         require (amount >= _minAmount, "WrappedCBT: less than minAmount");
 
-        _depositAmount[msg.sender] = amount;
+        _purchasedAmount[msg.sender] = amount;
 
         IERC20(_cbt).transferFrom(msg.sender, address(this), amount);
         _mint(msg.sender, amount);
