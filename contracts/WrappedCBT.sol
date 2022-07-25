@@ -47,7 +47,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
         IERC20(_cbt).transfer(msg.sender, amount);
     }
 
-    function updateMinAmount(uint256 amount)
+    function setMinAmount(uint256 amount)
         external
         override
         onlyOwner

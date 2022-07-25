@@ -25,7 +25,7 @@ interface IWrappedCBT {
      *
      * @param amount 設定する最低金額
      */
-    function updateMinAmount(uint256 amount) external;
+    function setMinAmount(uint256 amount) external;
 
     /**
      * @notice 購入の最低金額を取得する.
