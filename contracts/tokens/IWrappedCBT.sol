@@ -11,14 +11,34 @@ interface IWrappedCBT {
      *
      * @param amount 変換するCBT/WrappedCBTの量
      */
-    function purchase(uint256 amount) external;
+    function stake(uint256 amount) external;
+
+    /**
+     * @notice 権利確定済のWrappedCBTを受け取る.
+     */
+    function receiveWCBT() external;
 
     /**
      * @notice WrappedCBTと引き換えにCBTを返済する.
+     * 権利確定(WrappedCBT受領)前のCBTも返済される. TODO: 仕様確認.
      *
      * @param account 返済対象のアカウント.
      */
     function redeem(address account) external;
+
+    /**
+     * @notice stakeされているCBTをOwnerが引き落とす.
+     *
+     * @param amount 引き落とす金額
+     */
+    function withdraw(uint256 amount) external;
+
+    /**
+     * @notice 権利確定までのロック期間を設定する.
+     *
+     * @param lockInterval ロック期間.
+     */
+    function setLockInterval(uint64 lockInterval) external;
 
     /**
      * @notice 購入の最低金額を設定する.
@@ -33,4 +53,11 @@ interface IWrappedCBT {
      * @return 現在の最低金額
      */
     function minAmount() external view returns (uint256);
+
+    /**
+     * @notice stake 済か否かを返す. 権利確定前でも stake されていれば真を返す.
+     *
+     * @return 購入したか否か
+     */
+    function isStaking(address account) external view returns (bool);
 }

@@ -7,46 +7,69 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 
 /**
- * @notice コンテンツにCBTをstakeした分と同量だけ貰えるトークン(株式).
+ * @notice コンテンツにCBTをstakeした分と同量だけ貰える、コンテンツ毎に発行されるトークン(株式).
  */
 contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
-    address private _cbt;
+    struct PendingReceiveStake {
+        uint stakedTimestamp;
+        uint256 amount;
+    }
+
+    IERC20 private _cbt;
     uint256 private _minAmount;
-    mapping (address => uint256) private _purchasedAmount;
+    uint private _lockInterval;
+    mapping (address => uint256) private _receivedStakeAmounts;
+    mapping (address => PendingReceiveStake) private _pendingReceiveStakes;
 
     // ######################
     // ## Owner functions  ##
     // ######################
 
-    constructor(address cbt)
+    constructor(IERC20 cbt)
         ERC20("Wrapped CBT", "CBT")
     {
         _cbt = cbt;
     }
 
+    /// @inheritdoc IWrappedCBT
     function redeem(address account)
         external
         override
         onlyOwner
     {
-        uint256 amount = _purchasedAmount[account];
+        uint256 receivedAmount = _receivedStakeAmounts[account];
+        uint256 pendingAmount = _pendingReceiveStakes[account].amount;
+        uint256 totalAmount = receivedAmount + pendingAmount;
 
-        require (amount > 0, "WrappedCBT: no amount deposited");
-        require (IERC20(_cbt).balanceOf(address(this)) >= amount, "WrappedCBT: lack of CBT balance");
+        require (totalAmount > 0, "WrappedCBT: no amount deposited");
+        require (_cbt.balanceOf(address(this)) >= totalAmount, "WrappedCBT: lack of CBT balance");
 
-        _purchasedAmount[account] = 0;
+        delete _receivedStakeAmounts[account];
+        delete _pendingReceiveStakes[account];
 
-        _burn(account, amount);
-        IERC20(_cbt).transfer(account, amount);
+        _burn(account, receivedAmount);
+        _cbt.transfer(account, totalAmount);
     }
 
+    /// @inheritdoc IWrappedCBT
     function withdraw(uint256 amount)
         external
+        override
         onlyOwner
     {
-        IERC20(_cbt).transfer(msg.sender, amount);
+        _cbt.transfer(msg.sender, amount);
     }
 
+    /// @inheritdoc IWrappedCBT
+    function setLockInterval(uint64 lockInterval)
+        external
+        override
+        onlyOwner
+    {
+        _lockInterval = lockInterval;
+    }
+
+    /// @inheritdoc IWrappedCBT
     function setMinAmount(uint256 amount)
         external
         override
@@ -59,18 +82,38 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
     // ## Public functions ##
     // ######################
 
-    function purchase(uint256 amount)
+    /// @inheritdoc IWrappedCBT
+    function stake(uint256 amount)
         external
         override
     {
         require (amount >= _minAmount, "WrappedCBT: less than minAmount");
+        require (_pendingReceiveStakes[msg.sender].amount == 0, "WrappedCBT: pending stake exists");
 
-        _purchasedAmount[msg.sender] = amount;
+        _pendingReceiveStakes[msg.sender] = PendingReceiveStake(block.timestamp, amount);
 
-        IERC20(_cbt).transferFrom(msg.sender, address(this), amount);
+        _cbt.transferFrom(msg.sender, address(this), amount);
+    }
+
+    /// @inheritdoc IWrappedCBT
+    function receiveWCBT()
+        external
+        override
+    {
+        PendingReceiveStake storage ps = _pendingReceiveStakes[msg.sender];
+
+        require (ps.amount > 0, "WrappedCBT: no pending stake exists");
+        require (ps.stakedTimestamp + _lockInterval <= block.timestamp, "WrappedCBT: within lock interval");
+
+        uint256 amount = ps.amount;
+        _receivedStakeAmounts[msg.sender] += amount;
+
+        delete _pendingReceiveStakes[msg.sender];
+
         _mint(msg.sender, amount);
     }
 
+    /// @inheritdoc IWrappedCBT
     function minAmount()
         external
         view
@@ -78,5 +121,16 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
         returns (uint256)
     {
         return _minAmount;
+    }
+
+    /// @inheritdoc IWrappedCBT
+    function isStaking(address account)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return _receivedStakeAmounts[account] > 0
+            || _pendingReceiveStakes[account].amount > 0;
     }
 }

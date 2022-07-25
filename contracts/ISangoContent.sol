@@ -74,7 +74,7 @@ interface ISangoContent {
      *
      * @param account unstake を要求しているアカウント
      */
-    function rejectUnstakeRequest(address account) external;
+    // function rejectUnstakeRequest(address account) external; // TODO: 処理内容が明確になってから実装
 
     /**
      * @notice ステークしてからRBTがもらえるようになるまでの期間を設定する

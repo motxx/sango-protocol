@@ -9,12 +9,18 @@ import { CET } from "./CET.sol";
 import { IExcitingModule } from "./components/IExcitingModule.sol";
 import { RBTProportions } from "./shares/RBTProportions.sol";
 import { ICET } from "./tokens/ICET.sol";
+import { WrappedCBT } from "./WrappedCBT.sol";
 
 contract SangoContent is ISangoContent, Ownable, RBTProportions {
     using Address for address;
 
+    event RequestUnstake(address account);
+    event AcceptUnstakeRequest(address account);
+
     IExcitingModule[] private _excitingModules;
     CET private _cet;
+    WrappedCBT private _wrappedCBT;
+    mapping (address => bool) private _unstakeRequested;
 
     constructor(
         IERC20 rbt,
@@ -27,7 +33,8 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         uint32 cbtStakerProp,
         uint32 primaryProp,
         string memory cetName,
-        string memory cetSymbol
+        string memory cetSymbol,
+        IERC20 _cbt
     )
         RBTProportions(rbt)
     {
@@ -35,6 +42,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         _getPrimaryShares().initPayees(primaries, primaryShares);
         setRBTProportions(creatorProp, cetBurnerProp, cbtStakerProp, primaryProp);
         _cet = new CET(cetName, cetSymbol);
+        _wrappedCBT = new WrappedCBT(_cbt);
     }
 
     /// @inheritdoc ISangoContent
@@ -103,12 +111,12 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
 
     /// @inheritdoc ISangoContent
     function isStaking(address account)
-        external
+        public
         view
         override
         returns (bool)
     {
-        revert ("TODO");
+        return _wrappedCBT.isStaking(account);
     }
 
     /// @inheritdoc ISangoContent
@@ -116,7 +124,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         external
         override
     {
-        revert ("TODO");
+        _wrappedCBT.stake(amount);
     }
 
     /// @inheritdoc ISangoContent
@@ -124,7 +132,11 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         external
         override
     {
-        revert ("TODO");
+        require (isStaking(msg.sender), "SangoContent: no amount staked");
+        require (!_unstakeRequested[msg.sender], "SangoContent: already unstake requested");
+        _unstakeRequested[msg.sender] = true;
+
+        emit RequestUnstake(msg.sender);
     }
 
     /// @inheritdoc ISangoContent
@@ -133,16 +145,11 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         override
         onlyOwner
     {
-        revert ("TODO");
-    }
+        require (_unstakeRequested[account], "SangoContent: no unstake request");
+        _unstakeRequested[account] = false;
+        _wrappedCBT.redeem(account);
 
-    /// @inheritdoc ISangoContent
-    function rejectUnstakeRequest(address account)
-        external
-        override
-        onlyOwner
-    {
-        revert ("TODO");
+        emit AcceptUnstakeRequest(account);
     }
 
     /// @inheritdoc ISangoContent
@@ -151,7 +158,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         override
         onlyOwner
     {
-        revert ("TODO");
+        _wrappedCBT.setLockInterval(lockInterval);
     }
 
     // #############################
