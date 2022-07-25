@@ -3,7 +3,8 @@ import { Contract } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type SangoCtorArgs = {
-  rbtAddress: string;
+  rbt: string;
+  cbt: string;
   creators: string[];
   creatorShares: number[];
   primaries: string[];
@@ -20,38 +21,18 @@ export type DeploySangoFunction = (args: SangoCtorArgs) => Promise<Contract>;
 
 export const deploySango = async (args: SangoCtorArgs) => {
   const SangoContent = await ethers.getContractFactory("SangoContent");
-  const sango = await SangoContent.deploy(
-    args.rbtAddress,
-    args.creators,
-    args.creatorShares,
-    args.primaries,
-    args.primaryShares,
-    args.creatorProp,
-    args.cetBurnerProp,
-    args.cbtStakerProp,
-    args.primaryProp,
-    args.cetName ?? "Content Excited Token",
-    args.cetSymbol ?? "CET",
-  );
+  args.cetName = args.cetName ?? "Content Excited Token";
+  args.cetSymbol = args.cetSymbol ?? "CET";
+  const sango = await SangoContent.deploy(args);
   await sango.deployed();
   return sango;
 };
 
 export const deploySangoBy = async (deployer: SignerWithAddress, args: SangoCtorArgs) => {
   const SangoContent = await ethers.getContractFactory("SangoContent");
-  const sango = await SangoContent.connect(deployer).deploy(
-    args.rbtAddress,
-    args.creators,
-    args.creatorShares,
-    args.primaries,
-    args.primaryShares,
-    args.creatorProp,
-    args.cetBurnerProp,
-    args.cbtStakerProp,
-    args.primaryProp,
-    args.cetName ?? "Content Excited Token",
-    args.cetSymbol ?? "CET",
-  );
+  args.cetName = args.cetName ?? "Content Excited Token";
+  args.cetSymbol = args.cetSymbol ?? "CET";
+  const sango = await SangoContent.connect(deployer).deploy(args);
   await sango.deployed();
   return sango;
 };

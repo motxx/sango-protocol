@@ -9,6 +9,7 @@ chai.use(solidity);
 
 describe("Contents Royalty Graph", async () => {
   let rbt: Contract;
+  let cbt: Contract;
   let s1: SignerWithAddress;
 
   const RBTProps = {
@@ -23,11 +24,14 @@ describe("Contents Royalty Graph", async () => {
 
     const RBT = await ethers.getContractFactory("RBT");
     rbt = await RBT.deploy();
+    const CBT = await ethers.getContractFactory("CBT");
+    cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
   });
 
   it("Should construct DAG", async () => {
     const first = await deploySango({
-      rbtAddress: rbt.address,
+      rbt: rbt.address,
+      cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
       primaries: [] as string[],
@@ -35,7 +39,8 @@ describe("Contents Royalty Graph", async () => {
       ...RBTProps,
     });
     const second = await deploySango({
-      rbtAddress: rbt.address,
+      rbt: rbt.address,
+      cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
       primaries: [first.address],
@@ -43,7 +48,8 @@ describe("Contents Royalty Graph", async () => {
       ...RBTProps,
     });
     const third = await deploySango({
-      rbtAddress: rbt.address,
+      rbt: rbt.address,
+      cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
       primaries: [first.address, second.address],
@@ -57,7 +63,8 @@ describe("Contents Royalty Graph", async () => {
 
   it("Should not have duplicate creators", async () => {
     await expect(deploySango({
-      rbtAddress: rbt.address,
+      rbt: rbt.address,
+      cbt: cbt.address,
       creators: [s1.address, s1.address],
       creatorShares: [1, 2],
       primaries: [],
@@ -69,7 +76,8 @@ describe("Contents Royalty Graph", async () => {
 
   it("Should not have duplicate primaries", async () => {
     const first = await deploySango({
-      rbtAddress: rbt.address,
+      rbt: rbt.address,
+      cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
       primaries: [],
@@ -77,7 +85,8 @@ describe("Contents Royalty Graph", async () => {
       ...RBTProps,
     });
     await expect(deploySango({
-      rbtAddress: rbt.address,
+      rbt: rbt.address,
+      cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
       primaries: [first.address, first.address],
@@ -90,9 +99,10 @@ describe("Contents Royalty Graph", async () => {
 
 describe("Content Excited Token", async () => {
   let rbt: Contract;
+  let cbt: Contract;
+  let cet: Contract;
   let s1: SignerWithAddress;
   let sango: Contract;
-  let cet: Contract;
 
   const RBTProps = {
     creatorProp: 2000,
@@ -106,8 +116,11 @@ describe("Content Excited Token", async () => {
 
     const RBT = await ethers.getContractFactory("RBT");
     rbt = await RBT.deploy();
+    const CBT = await ethers.getContractFactory("CBT");
+    cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
     sango = await deploySango({
-      rbtAddress: rbt.address,
+      rbt: rbt.address,
+      cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
       primaries: [] as string[],

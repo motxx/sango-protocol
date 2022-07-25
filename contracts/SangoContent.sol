@@ -12,6 +12,21 @@ import { ICET } from "./tokens/ICET.sol";
 import { WrappedCBT } from "./WrappedCBT.sol";
 
 contract SangoContent is ISangoContent, Ownable, RBTProportions {
+    struct CtorArgs {
+        IERC20 rbt;
+        IERC20 cbt;
+        address[] creators;
+        uint256[] creatorShares;
+        address[] primaries;
+        uint256[] primaryShares;
+        uint32 creatorProp;
+        uint32 cetBurnerProp;
+        uint32 cbtStakerProp;
+        uint32 primaryProp;
+        string cetName;
+        string cetSymbol;
+    }
+
     using Address for address;
 
     event RequestUnstake(address account);
@@ -22,27 +37,14 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     WrappedCBT private _wrappedCBT;
     mapping (address => bool) private _unstakeRequested;
 
-    constructor(
-        IERC20 rbt,
-        address[] memory creators,
-        uint256[] memory creatorShares,
-        address[] memory primaries,
-        uint256[] memory primaryShares,
-        uint32 creatorProp,
-        uint32 cetBurnerProp,
-        uint32 cbtStakerProp,
-        uint32 primaryProp,
-        string memory cetName,
-        string memory cetSymbol,
-        IERC20 _cbt
-    )
-        RBTProportions(rbt)
+    constructor(CtorArgs memory args)
+        RBTProportions(args.rbt)
     {
-        _getCreatorShares().initPayees(creators, creatorShares);
-        _getPrimaryShares().initPayees(primaries, primaryShares);
-        setRBTProportions(creatorProp, cetBurnerProp, cbtStakerProp, primaryProp);
-        _cet = new CET(cetName, cetSymbol);
-        _wrappedCBT = new WrappedCBT(_cbt);
+        _getCreatorShares().initPayees(args.creators, args.creatorShares);
+        _getPrimaryShares().initPayees(args.primaries, args.primaryShares);
+        setRBTProportions(args.creatorProp, args.cetBurnerProp, args.cbtStakerProp, args.primaryProp);
+        _cet = new CET(args.cetName, args.cetSymbol);
+        _wrappedCBT = new WrappedCBT(args.cbt);
     }
 
     /// @inheritdoc ISangoContent
