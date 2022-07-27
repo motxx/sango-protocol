@@ -169,6 +169,46 @@ describe("Content Believe Token", async () => {
     expect(await sango.connect(s1).isStaking(s1.address)).true;
     expect(await wCBT.balanceOf(s1.address)).equals(100);
   });
+
+  it("Should unstake if the content owner accepts the request", async () => {
+    await cbt.connect(cbtWallet).transfer(s1.address, 100);
+
+    await cbt.connect(s1).approve(wCBT.address, 100);
+    await sango.connect(s1).stake(100);
+    await sango.connect(s1).receiveWCBT();
+
+    await sango.connect(s1).requestUnstake();
+
+    expect(await cbt.balanceOf(s1.address)).equals(0);
+    expect(await wCBT.balanceOf(s1.address)).equals(100);
+
+    await sango.acceptUnstakeRequest(s1.address);
+
+    expect(await cbt.balanceOf(s1.address)).equals(100);
+    expect(await wCBT.balanceOf(s1.address)).equals(0);
+  });
+
+  it("Should unstake if not received wCBT", async () => {
+    await cbt.connect(cbtWallet).transfer(s1.address, 100);
+
+    await cbt.connect(s1).approve(wCBT.address, 100);
+    await sango.connect(s1).stake(100);
+    await sango.connect(s1).requestUnstake();
+    await sango.acceptUnstakeRequest(s1.address);
+
+    expect(await cbt.balanceOf(s1.address)).equals(100);
+    expect(await wCBT.balanceOf(s1.address)).equals(0);
+  });
+
+  it("Should not acceptUnstaleRequest if no unstake request", async () => {
+    await cbt.connect(cbtWallet).transfer(s1.address, 100);
+
+    await cbt.connect(s1).approve(wCBT.address, 100);
+    await sango.connect(s1).stake(100);
+
+    await expect(sango.acceptUnstakeRequest(s1.address)).revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'SangoContent: no unstake request'");
+  });
 });
 
 describe("Content Excited Token", async () => {
