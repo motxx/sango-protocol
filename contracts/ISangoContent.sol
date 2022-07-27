@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.7;
+pragma solidity ^0.8.0;
 
 import { IExcitingModule } from "./components/IExcitingModule.sol";
 import { ICET } from "./tokens/ICET.sol";
+import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 
 interface ISangoContent {
     /**
@@ -39,7 +40,76 @@ interface ISangoContent {
     function getPrimaries() external view returns (address[] memory);
 
     // #############################
-    // ## Contents Excited Token  ##
+    // ## Content Believe Token   ##
+    // #############################
+
+    /**
+     * @notice コンテンツの発行する WrappedCBT のアドレスを返す.
+     */
+    function wrappedCBT() external view returns (IWrappedCBT);
+
+    /**
+     * @notice account がステークしているか確認
+     *
+     * @return ステークしている場合 True が返る
+     */
+    function isStaking(address account) external view returns (bool);
+
+    /**
+     * @notice account が unstake 要求中かの確認
+     *
+     * @return 要求中である場合 True が返る
+     */
+    function isUnstakeRequested(address account) external view returns (bool);
+
+    /**
+     * @notice amount 分 stake する. 株式と同様で返済義務はない.
+     * stakeholder は、ロック期間終了後に wCBT の獲得ができる.
+     *
+     * @param amount stake するCBTの数量
+     */
+    function stake(uint256 amount) external;
+
+    /**
+     * @notice ロック期間を終えた wCBT を受け取る.
+     */
+    function receiveWCBT() external;
+
+    /**
+     * @notice unstake を要求する. request は記録される.
+     */
+    function requestUnstake() external;
+
+    /**
+     * @notice unstake の要求を承諾し、全額(暫定)引き落とされる.
+     *
+     * @param account unstake を要求しているアカウント
+     */
+    function acceptUnstakeRequest(address account) external;
+
+    /**
+     * @notice unstake の要求を拒否する.
+     *
+     * @param account unstake を要求しているアカウント
+     */
+    // function rejectUnstakeRequest(address account) external; // TODO: 処理内容が明確になってから実装
+
+    /**
+     * @notice クリエイターがCBT引き落とす(資金調達).
+     *
+     * @param amount 引き落とす金額
+     */
+    function withdraw(uint256 amount) external;
+
+    /**
+     * @notice wCBT 獲得までのロック期間を設定する.
+     *
+     * @param lockInterval ステークしてから、wCBT を受領できるまでのロック期間
+     */
+    function setLockInterval(uint64 lockInterval) external;
+
+    // #############################
+    // ## Content Excited Token   ##
     // #############################
 
     /**

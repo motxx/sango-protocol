@@ -14,7 +14,7 @@ const {
 
 const config: HardhatUserConfig & { etherscan: { apiKey?: string } } = {
   solidity: {
-    version: "0.8.7",
+    version: "0.8.15",
     settings: {
       // https://blog.soliditylang.org/2020/11/04/solidity-ama-1-recap/
       optimizer: {

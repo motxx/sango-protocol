@@ -10,6 +10,7 @@ chai.use(solidity);
 describe("ExchangeService", () => {
   let exchangeService: Contract;
   let rbt: Contract;
+  let cbt: Contract;
   let sango1: Contract;
   let sango2: Contract;
   let s1: SignerWithAddress;
@@ -23,9 +24,12 @@ describe("ExchangeService", () => {
     await exchangeService.deployed();
     const rbtAddress = await exchangeService.rbt();
     rbt = await ethers.getContractAt("RBT", rbtAddress);
+    const CBT = await ethers.getContractFactory("CBT");
+    cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
 
     sango1 = await deploySangoBy(s1, {
-      rbtAddress,
+      rbt: rbtAddress,
+      cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
       primaries: [] as string[],
@@ -38,7 +42,8 @@ describe("ExchangeService", () => {
     await sango1.deployed();
 
     sango2 = await deploySangoBy(s2, {
-      rbtAddress,
+      rbt: rbtAddress,
+      cbt: cbt.address,
       creators: [s2.address],
       creatorShares: [1],
       primaries: [sango1.address],
@@ -122,6 +127,7 @@ describe("ExchangeService", () => {
 describe("distribute on DAG", () => {
   let exchangeService: Contract;
   let rbt: Contract;
+  let cbt: Contract;
   let rbtAddress: string;
 
   beforeEach(async () => {
@@ -130,6 +136,8 @@ describe("distribute on DAG", () => {
     await exchangeService.deployed();
     rbtAddress = await exchangeService.rbt();
     rbt = await ethers.getContractAt("RBT", rbtAddress);
+    const CBT = await ethers.getContractFactory("CBT");
+    cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
   });
 
   it("Should verify balance of the creators of primary contents", async () => {
@@ -153,7 +161,8 @@ describe("distribute on DAG", () => {
       primaryProp: number,
     ) => {
       return await deploySangoBy(signer, {
-        rbtAddress,
+        rbt: rbtAddress,
+        cbt: cbt.address,
         creators,
         creatorShares,
         primaries,

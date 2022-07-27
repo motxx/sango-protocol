@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.7;
+pragma solidity ^0.8.0;
 
 import { IOracle } from "../oracles/IOracle.sol";
 import { ICET } from "../tokens/ICET.sol";
