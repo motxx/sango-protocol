@@ -97,6 +97,67 @@ describe("Contents Royalty Graph", async () => {
   });
 });
 
+describe("Content Believe Token", async () => {
+  let rbt: Contract;
+  let cbt: Contract;
+  let wCBT: Contract;
+  let owner: SignerWithAddress;
+  let cbtWallet: SignerWithAddress;
+  let s1: SignerWithAddress;
+  let sango: Contract;
+
+  const RBTProps = {
+    creatorProp: 2000,
+    cetBurnerProp: 2000,
+    cbtStakerProp: 2000,
+    primaryProp: 2000,
+  };
+
+  beforeEach(async () => {
+    [owner, cbtWallet, s1] = await ethers.getSigners();
+
+    const RBT = await ethers.getContractFactory("RBT");
+    rbt = await RBT.deploy();
+    const CBT = await ethers.getContractFactory("CBT");
+    cbt = await CBT.deploy(cbtWallet.address);
+    sango = await deploySango({
+      rbt: rbt.address,
+      cbt: cbt.address,
+      creators: [s1.address],
+      creatorShares: [1],
+      primaries: [] as string[],
+      primaryShares: [] as number[],
+      ...RBTProps,
+    });
+    const wCBTAddress = await sango.wrappedCBT();
+    wCBT = await ethers.getContractAt("WrappedCBT", wCBTAddress);
+  });
+
+  it("Should stake", async () => {
+    await cbt.connect(cbtWallet).transfer(s1.address, 100);
+    expect(await cbt.balanceOf(s1.address)).equals(100);
+    await cbt.connect(s1).approve(wCBT.address, 100);
+    await sango.connect(s1).stake(100);
+    expect(await sango.connect(s1).isStaking(s1.address)).true;
+    expect(await cbt.connect(s1).balanceOf(s1.address)).equals(0);
+  });
+
+  it("Should receiveWCBT after lock interval", async () => {
+    await cbt.connect(cbtWallet).transfer(s1.address, 100);
+    await ethers.provider.send("evm_mine", [10000000000]);
+    await sango.setLockInterval(1000);
+    await cbt.connect(s1).approve(wCBT.address, 100);
+    await sango.connect(s1).stake(100);
+    await ethers.provider.send("evm_mine", [10000000999]);
+    await expect(sango.connect(s1).receiveWCBT()).revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: within lock interval'");
+    await ethers.provider.send("evm_mine", [10000001010]);
+    await sango.connect(s1).receiveWCBT();
+    expect(await sango.connect(s1).isStaking(s1.address)).true;
+    expect(await wCBT.balanceOf(s1.address)).equals(100);
+  });
+});
+
 describe("Content Excited Token", async () => {
   let rbt: Contract;
   let cbt: Contract;

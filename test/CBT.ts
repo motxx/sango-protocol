@@ -18,7 +18,7 @@ describe("Content Believe Token", async () => {
     const CBT = await ethers.getContractFactory("CBT");
     const dummyVestingWallet = "0x0000000000000000000000000000000000000001";
     cbt = await CBT.deploy(dummyVestingWallet);
-    expect(await cbt.balanceOf(dummyVestingWallet)).to.equals(2 ** 14);
+    expect(await cbt.balanceOf(dummyVestingWallet)).to.equals(10 ** 14);
   });
 
   it("Should distribute vesting wallet CBT", async () => {

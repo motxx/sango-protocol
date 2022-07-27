@@ -9,6 +9,7 @@ import { CET } from "./CET.sol";
 import { IExcitingModule } from "./components/IExcitingModule.sol";
 import { RBTProportions } from "./shares/RBTProportions.sol";
 import { ICET } from "./tokens/ICET.sol";
+import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 import { WrappedCBT } from "./WrappedCBT.sol";
 
 contract SangoContent is ISangoContent, Ownable, RBTProportions {
@@ -112,6 +113,16 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     // #############################
 
     /// @inheritdoc ISangoContent
+    function wrappedCBT()
+        external
+        view
+        override
+        returns (IWrappedCBT)
+    {
+        return _wrappedCBT;
+    }
+
+    /// @inheritdoc ISangoContent
     function isStaking(address account)
         public
         view
@@ -126,7 +137,15 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         external
         override
     {
-        _wrappedCBT.stake(amount);
+        _wrappedCBT.stake(msg.sender, amount);
+    }
+
+    /// @inheritdoc ISangoContent
+    function receiveWCBT()
+        external
+        override
+    {
+        _wrappedCBT.receiveWCBT(msg.sender);
     }
 
     /// @inheritdoc ISangoContent
@@ -152,6 +171,15 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         _wrappedCBT.redeem(account);
 
         emit AcceptUnstakeRequest(account);
+    }
+
+    /// @inheritdoc ISangoContent
+    function withdraw(uint256 amount)
+        external
+        override
+        onlyOwner
+    {
+        _wrappedCBT.withdraw(msg.sender, amount);
     }
 
     /// @inheritdoc ISangoContent

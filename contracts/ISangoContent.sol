@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import { IExcitingModule } from "./components/IExcitingModule.sol";
 import { ICET } from "./tokens/ICET.sol";
+import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 
 interface ISangoContent {
     /**
@@ -43,6 +44,11 @@ interface ISangoContent {
     // #############################
 
     /**
+     * @notice コンテンツの発行する WrappedCBT のアドレスを返す.
+     */
+    function wrappedCBT() external view returns (IWrappedCBT);
+
+    /**
      * @notice account がステークしているか確認
      *
      * @return ステークしている場合 True が帰る
@@ -51,11 +57,16 @@ interface ISangoContent {
 
     /**
      * @notice amount 分 stake する. 株式と同様で返済義務はない.
-     * stakeholder は wCBT を獲得し、ガバナンス権(暫定)を得る.
+     * stakeholder は、ロック期間終了後に wCBT の獲得ができる.
      *
      * @param amount stake するCBTの数量
      */
     function stake(uint256 amount) external;
+
+    /**
+     * @notice ロック期間を終えた wCBT を受け取る.
+     */
+    function receiveWCBT() external;
 
     /**
      * @notice unstake を要求する. request は記録される.
@@ -77,9 +88,16 @@ interface ISangoContent {
     // function rejectUnstakeRequest(address account) external; // TODO: 処理内容が明確になってから実装
 
     /**
-     * @notice ステークしてからRBTがもらえるようになるまでの期間を設定する
+     * @notice クリエイターがCBT引き落とす(資金調達).
      *
-     * @param lockInterval ステークしてから、RBT受け取る事ができるまでの期間
+     * @param amount 引き落とす金額
+     */
+    function withdraw(uint256 amount) external;
+
+    /**
+     * @notice wCBT 獲得までのロック期間を設定する.
+     *
+     * @param lockInterval ステークしてから、wCBT を受領できるまでのロック期間
      */
     function setLockInterval(uint64 lockInterval) external;
 

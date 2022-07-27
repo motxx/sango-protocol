@@ -8,6 +8,7 @@ import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 
 /**
  * @notice コンテンツにCBTをstakeした分と同量だけ貰える、コンテンツ毎に発行されるトークン(株式).
+ * wCBT の stakeholder は、RBTの分配を受けることができる. また、コンテンツのガバナンス権を持つ場合もある.
  */
 contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
     struct PendingReceiveStake {
@@ -52,12 +53,12 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
     }
 
     /// @inheritdoc IWrappedCBT
-    function withdraw(uint256 amount)
+    function withdraw(address contentOwner, uint256 amount)
         external
         override
         onlyOwner
     {
-        _cbt.transfer(msg.sender, amount);
+        _cbt.transfer(contentOwner, amount);
     }
 
     /// @inheritdoc IWrappedCBT
@@ -78,40 +79,42 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
         _minAmount = amount;
     }
 
-    // ######################
-    // ## Public functions ##
-    // ######################
-
     /// @inheritdoc IWrappedCBT
-    function stake(uint256 amount)
+    function stake(address from, uint256 amount)
         external
         override
+        onlyOwner
     {
         require (amount >= _minAmount, "WrappedCBT: less than minAmount");
-        require (_pendingReceiveStakes[msg.sender].amount == 0, "WrappedCBT: pending stake exists");
+        require (_pendingReceiveStakes[from].amount == 0, "WrappedCBT: pending stake exists");
 
-        _pendingReceiveStakes[msg.sender] = PendingReceiveStake(block.timestamp, amount);
+        _pendingReceiveStakes[from] = PendingReceiveStake(block.timestamp, amount);
 
-        _cbt.transferFrom(msg.sender, address(this), amount);
+        _cbt.transferFrom(from, address(this), amount);
     }
 
     /// @inheritdoc IWrappedCBT
-    function receiveWCBT()
+    function receiveWCBT(address to)
         external
         override
+        onlyOwner
     {
-        PendingReceiveStake storage ps = _pendingReceiveStakes[msg.sender];
+        PendingReceiveStake storage ps = _pendingReceiveStakes[to];
 
         require (ps.amount > 0, "WrappedCBT: no pending stake exists");
         require (ps.stakedTimestamp + _lockInterval <= block.timestamp, "WrappedCBT: within lock interval");
 
         uint256 amount = ps.amount;
-        _receivedStakeAmounts[msg.sender] += amount;
+        _receivedStakeAmounts[to] += amount;
 
-        delete _pendingReceiveStakes[msg.sender];
+        delete _pendingReceiveStakes[to];
 
-        _mint(msg.sender, amount);
+        _mint(to, amount);
     }
+
+    // ######################
+    // ## Public functions ##
+    // ######################
 
     /// @inheritdoc IWrappedCBT
     function minAmount()

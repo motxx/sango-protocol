@@ -7,20 +7,23 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IWrappedCBT {
     /**
-     * @notice CBTを支払い、同量のWrappedCBTを購入する.
+     * @notice CBTを支払い、同量のwCBTを購入する.
      *
-     * @param amount 変換するCBT/WrappedCBTの量
+     * @param from CBTを支払うアカウント
+     * @param amount 変換するCBT/wCBTの量
      */
-    function stake(uint256 amount) external;
+    function stake(address from, uint256 amount) external;
 
     /**
-     * @notice 権利確定済のWrappedCBTを受け取る.
+     * @notice 権利確定済のwCBTを受け取る.
+     *
+     * @param to wCBTを受け取るアカウント
      */
-    function receiveWCBT() external;
+    function receiveWCBT(address to) external;
 
     /**
-     * @notice WrappedCBTと引き換えにCBTを返済する.
-     * 権利確定(WrappedCBT受領)前のCBTも返済される. TODO: 仕様確認.
+     * @notice wCBTと引き換えにCBTを返済する.
+     * 権利確定(wCBT受領)前のCBTも返済される. TODO: 仕様確認.
      *
      * @param account 返済対象のアカウント.
      */
@@ -29,9 +32,10 @@ interface IWrappedCBT {
     /**
      * @notice stakeされているCBTをOwnerが引き落とす.
      *
+     * @param contentOwner コンテンツのOwner(クリエイター)
      * @param amount 引き落とす金額
      */
-    function withdraw(uint256 amount) external;
+    function withdraw(address contentOwner, uint256 amount) external;
 
     /**
      * @notice 権利確定までのロック期間を設定する.
