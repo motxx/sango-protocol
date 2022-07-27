@@ -133,6 +133,16 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     }
 
     /// @inheritdoc ISangoContent
+    function isUnstakeRequested(address account)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _unstakeRequested[account];
+    }
+
+    /// @inheritdoc ISangoContent
     function stake(uint256 amount)
         external
         override

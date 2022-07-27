@@ -51,9 +51,16 @@ interface ISangoContent {
     /**
      * @notice account がステークしているか確認
      *
-     * @return ステークしている場合 True が帰る
+     * @return ステークしている場合 True が返る
      */
     function isStaking(address account) external view returns (bool);
+
+    /**
+     * @notice account が unstake 要求中かの確認
+     *
+     * @return 要求中である場合 True が返る
+     */
+    function isUnstakeRequested(address account) external view returns (bool);
 
     /**
      * @notice amount 分 stake する. 株式と同様で返済義務はない.
