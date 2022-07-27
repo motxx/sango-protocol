@@ -133,26 +133,39 @@ describe("Content Believe Token", async () => {
     wCBT = await ethers.getContractAt("WrappedCBT", wCBTAddress);
   });
 
-  it("Should stake", async () => {
+  it("Should stake CBT to the SangoContent", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 100);
-    expect(await cbt.balanceOf(s1.address)).equals(100);
+
+    // make S1's CBT spender the content's wCBT.
     await cbt.connect(s1).approve(wCBT.address, 100);
+
+    // S1 stakes his CBT (wCBT transfers the CBT to himself).
     await sango.connect(s1).stake(100);
+
     expect(await sango.connect(s1).isStaking(s1.address)).true;
     expect(await cbt.connect(s1).balanceOf(s1.address)).equals(0);
   });
 
   it("Should receiveWCBT after lock interval", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 100);
-    await ethers.provider.send("evm_mine", [10000000000]);
     await sango.setLockInterval(1000);
+
+    // make S1's CBT spender the content's wCBT.
+    await ethers.provider.send("evm_mine", [10000000000]);
     await cbt.connect(s1).approve(wCBT.address, 100);
+
+    // S1 stakes his CBT (wCBT transfers the CBT to himself).
     await sango.connect(s1).stake(100);
+
+    // S1 cannot receive WCBT before lock interval ends.
     await ethers.provider.send("evm_mine", [10000000999]);
     await expect(sango.connect(s1).receiveWCBT()).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: within lock interval'");
+
+    // S1 can receive WCBT after lock interval ends.
     await ethers.provider.send("evm_mine", [10000001010]);
     await sango.connect(s1).receiveWCBT();
+
     expect(await sango.connect(s1).isStaking(s1.address)).true;
     expect(await wCBT.balanceOf(s1.address)).equals(100);
   });
