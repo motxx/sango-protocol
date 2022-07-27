@@ -33,6 +33,24 @@ describe("Wrapped CBT", async () => {
     expect(await wCBT.balanceOf(s1.address)).equals(100);
   });
 
+  it("Should not stake multiple times unless unstaking(paying back)", async () => {
+    // They cannot stake multiple times unless unstaking (paying back).
+    await cbt.connect(cbtWallet).transfer(s1.address, 1000);
+    await cbt.connect(s1).approve(wCBT.address, 200);
+    await wCBT.stake(s1.address, 100);
+    await wCBT.receiveWCBT(s1.address);
+    await expect(wCBT.stake(s1.address, 100)).revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: already staked'");
+
+    // After paying back, they can stake again.
+    await wCBT.payback(s1.address);
+    await cbt.connect(s1).approve(wCBT.address, 200);
+    await wCBT.stake(s1.address, 200);
+    await wCBT.receiveWCBT(s1.address);
+    expect(await cbt.balanceOf(s1.address)).equals(800);
+    expect(await wCBT.balanceOf(s1.address)).equals(200);
+  });
+
   it("Should not stake if less than minAmount", async () => {
     await wCBT.setMinAmount(200);
     await cbt.connect(cbtWallet).transfer(s1.address, 1000);

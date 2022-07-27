@@ -87,6 +87,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
     {
         require (amount >= _minAmount, "WrappedCBT: less than minAmount");
         require (_pendingReceiveStakes[from].amount == 0, "WrappedCBT: pending stake exists");
+        require (_receivedStakeAmounts[from] == 0, "WrappedCBT: already staked");
 
         _pendingReceiveStakes[from] = PendingReceiveStake(block.timestamp, amount);
 
