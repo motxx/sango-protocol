@@ -33,7 +33,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
     }
 
     /// @inheritdoc IWrappedCBT
-    function redeem(address account)
+    function payback(address account)
         external
         override
         onlyOwner

@@ -178,7 +178,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     {
         require (_unstakeRequested[account], "SangoContent: no unstake request");
         _unstakeRequested[account] = false;
-        _wrappedCBT.redeem(account);
+        _wrappedCBT.payback(account);
 
         emit AcceptUnstakeRequest(account);
     }

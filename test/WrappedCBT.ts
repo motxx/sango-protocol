@@ -60,11 +60,11 @@ describe("Wrapped CBT", async () => {
       "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: within lock interval'");
   });
 
-  it("Should redeem", async () => {
+  it("Should payback", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 100);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.stake(s1.address, 100);
-    await wCBT.redeem(s1.address);
+    await wCBT.payback(s1.address);
     expect(await cbt.balanceOf(s1.address)).equals(100);
     expect(await wCBT.balanceOf(s1.address)).equals(0);
   });
@@ -77,12 +77,12 @@ describe("Wrapped CBT", async () => {
     expect(await cbt.balanceOf(s2.address)).equals(50);
   });
 
-  it("Should not redeem if lack of CBT", async () => {
+  it("Should not payback if lack of CBT", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 100);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.stake(s1.address, 100);
     await wCBT.withdraw(s1.address, 50);
-    await(expect(wCBT.redeem(s1.address))).revertedWith(
+    await(expect(wCBT.payback(s1.address))).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: lack of CBT balance'");
   });
 });

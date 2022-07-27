@@ -27,7 +27,7 @@ interface IWrappedCBT {
      *
      * @param account 返済対象のアカウント.
      */
-    function redeem(address account) external;
+    function payback(address account) external;
 
     /**
      * @notice stakeされているCBTをOwnerが引き落とす.
