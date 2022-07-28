@@ -25,7 +25,6 @@ contract CET is ERC20, ICET, AccessControl {
     )
         ERC20(name, symbol)
     {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(SANGO_CONTENT_ROLE, msg.sender);
     }
 
@@ -92,7 +91,7 @@ contract CET is ERC20, ICET, AccessControl {
         override
         onlyRole(SANGO_CONTENT_ROLE)
     {
-        grantRole(EXCITING_MODULE_ROLE, address(excitingModule));
+        _grantRole(EXCITING_MODULE_ROLE, address(excitingModule));
     }
 
     /// @inheritdoc ICET
