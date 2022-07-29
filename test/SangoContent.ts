@@ -256,10 +256,11 @@ describe("Content Excited Token", async () => {
     await sango.setExcitingModules([em1.address]);
     await sango.approveCETReceiver(s1.address);
     await sango.mintCET(s1.address);
-    expect(await cet.balanceOf(s1.address)).to.equal(10000);
+    expect(await cet.balanceOf(s1.address)).equals(1);
+    expect(await cet.holdingAmount(s1.address)).equals(10000);
     await sango.connect(s1).burnCET(9000);
-    expect(await sango.getBurnedCET(s1.address)).to.equal(9000);
-    expect(await cet.balanceOf(s1.address)).to.equal(1000);
+    expect(await sango.getBurnedCET(s1.address)).equals(9000);
+    expect(await cet.holdingAmount(s1.address)).equals(1000);
   });
 
   it("Should mintCET by multiple exciting modules", async () => {
@@ -277,7 +278,7 @@ describe("Content Excited Token", async () => {
     await sango.setExcitingModules([em1.address, em2.address]);
     await sango.approveCETReceiver(s1.address);
     await sango.mintCET(s1.address);
-    expect(await cet.balanceOf(s1.address)).to.equal(20000);
+    expect(await cet.holdingAmount(s1.address)).equals(20000);
   });
 
   it("Should not mintCET if no additional engagement got", async () => {

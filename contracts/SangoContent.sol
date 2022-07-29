@@ -216,6 +216,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         /* onlyGovernance */
     {
         _cet.approveCETReceiver(account);
+        _cet.mintNFT(account); // TODO: どこでmintNFTすべきか決める.
     }
 
     /// @inheritdoc ISangoContent
@@ -248,7 +249,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         external
         override
     {
-        _cet.burn(_msgSender(), amount);
+        _cet.burnAmount(_msgSender(), amount);
     }
 
     /// @inheritdoc ISangoContent
