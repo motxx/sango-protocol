@@ -15,7 +15,6 @@ contract CET is ERC721, ICET, AccessControl {
     mapping (address => uint256) private _burnedAmount;
     mapping (address => uint256) private _holdingAmount;
     mapping (address => uint256) private _accountTokenId;
-    mapping (address => bool) private _approvedReceivers; // ホワイトリスト形式
     Counters.Counter private _nextTokenId;
 
     bytes32 constant public EXCITING_MODULE_ROLE = keccak256("EXCITING_MODULE_ROLE");
@@ -74,7 +73,6 @@ contract CET is ERC721, ICET, AccessControl {
         override
         onlyRole(EXCITING_MODULE_ROLE)
     {
-        require (_approvedReceivers[account], "CET: account is not approved");
         require (_accountTokenId[account] > 0, "CET: NFT not minted yet");
 
         _holdingAmount[account] += amount;
@@ -90,7 +88,6 @@ contract CET is ERC721, ICET, AccessControl {
         override
         onlyRole(SANGO_CONTENT_ROLE)
     {
-        require (_approvedReceivers[account], "CET: account is not approved");
         require (_accountTokenId[account] == 0, "CET: NFT already minted");
 
         _nextTokenId.increment();
@@ -104,28 +101,9 @@ contract CET is ERC721, ICET, AccessControl {
         override
         onlyRole(SANGO_CONTENT_ROLE)
     {
-        require (_approvedReceivers[account], "CET: account is not approved");
         require (_holdingAmount[account] >= amount, "CET: lack of amount");
         _holdingAmount[account] -= amount;
         _burnedAmount[account] += amount;
-    }
-
-    /// @inheritdoc ICET
-    function approveCETReceiver(address account)
-        external
-        override
-        onlyRole(SANGO_CONTENT_ROLE)
-    {
-        _approvedReceivers[account] = true;
-    }
-
-    /// @inheritdoc ICET
-    function disapproveCETReceiver(address account)
-        external
-        override
-        onlyRole(SANGO_CONTENT_ROLE)
-    {
-        _approvedReceivers[account] = false;
     }
 
     /// @inheritdoc ICET

@@ -21,7 +21,6 @@ describe("Content Excited Token", async () => {
   describe("When CET modules are set up", async () => {
     beforeEach(async () => {
       await cet.connect(contentOwner).grantExcitingModule(excitingModule.address);
-      await cet.connect(contentOwner).approveCETReceiver(s1.address);
     });
 
     it("Should mintNFT", async () => {

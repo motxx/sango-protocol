@@ -112,33 +112,17 @@ interface ISangoContent {
     // ## Content Excited Token   ##
     // #############################
 
-    /**
-     * @notice Addr(Wallet / Contract)にCETを受け取る権利を与える.
-     * TODO: stateCommit と役割が重複するので廃止を検討する
-     *
-     * @param account CETを受け取るアドレス
-     */
-    function approveCETReceiver(address account) external;
-
-    /**
-     * @notice Addr(Wallet / Contract)からCETを受け取る権利を剥奪する.
-     * TODO: approveCETReceiver とともに廃止 or 名前を変えて残す.
-     *
-     * @param account CETを受け取る権利を剥奪するアドレス
-     */
-    function disapproveCETReceiver(address account) external;
-
     // 貢献形式. (TODO)
     struct CommitType {
         uint todo;
     }
 
     /**
-     * @notice 貢献の宣言.
+     * @notice 貢献の宣言. TODO: 命名に動詞を使いたい.
      *
      * @param commitType 貢献形式 (TODO)
      */
-    // function stateCommit(CommitType memory commitType) external;
+    function statementOfCommit(CommitType memory commitType) external;
 
     /**
      * @notice 登録してある Exciting Module に対し Mint CET を実行を要求する

@@ -254,7 +254,7 @@ describe("Content Excited Token", async () => {
     await em1.setCETOracle(cet.address, mo1.address);
 
     await sango.setExcitingModules([em1.address]);
-    await sango.approveCETReceiver(s1.address);
+    await sango.connect(s1).statementOfCommit({ todo: 1 /* dummy CommitType */});
     await sango.mintCET(s1.address);
     expect(await cet.balanceOf(s1.address)).equals(1);
     expect(await cet.holdingAmount(s1.address)).equals(10000);
@@ -276,7 +276,7 @@ describe("Content Excited Token", async () => {
     await em2.setCETOracle(cet.address, mo2.address);
 
     await sango.setExcitingModules([em1.address, em2.address]);
-    await sango.approveCETReceiver(s1.address);
+    await sango.connect(s1).statementOfCommit({ todo: 1 /* dummy CommitType */});
     await sango.mintCET(s1.address);
     expect(await cet.holdingAmount(s1.address)).equals(20000);
   });
@@ -291,7 +291,7 @@ describe("Content Excited Token", async () => {
     await em1.setCETOracle(cet.address, mo1.address);
 
     await sango.setExcitingModules([em1.address]);
-    await sango.approveCETReceiver(s1.address);
+    await sango.connect(s1).statementOfCommit({ todo: 1 /* dummy CommitType */});
     await sango.mintCET(s1.address);
     await expect(sango.mintCET(s1.address)).to.revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'ExcitingModule: no amount to mint'");

@@ -209,23 +209,11 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     // ## Governance Roles ##
     // ######################
 
-    /// @inheritdoc ISangoContent
-    function approveCETReceiver(address account)
+    function statementOfCommit(CommitType memory /* commitType */)
         external
         override
-        /* onlyGovernance */
     {
-        _cet.approveCETReceiver(account);
-        _cet.mintNFT(account); // TODO: どこでmintNFTすべきか決める.
-    }
-
-    /// @inheritdoc ISangoContent
-    function disapproveCETReceiver(address account)
-        external
-        override
-        /* onlyGovernance */
-    {
-        _cet.disapproveCETReceiver(account);
+        _cet.mintNFT(msg.sender);
     }
 
     /// @inheritdoc ISangoContent
