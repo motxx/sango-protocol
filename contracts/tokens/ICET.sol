@@ -45,20 +45,6 @@ interface ICET {
     function burnedAmount(address account) external view returns (uint256);
 
     /**
-     * @notice CETを受け取る権利を与える.
-     *
-     * @param account 対象のアカウント
-     */
-    function approveCETReceiver(address account) external;
-
-    /**
-     * @notice CETを受け取る権利を剥奪する.
-     *
-     * @param account 対象のアカウント
-     */
-    function disapproveCETReceiver(address account) external;
-
-    /**
      * @notice ExcitingModuleにCETのMint権等を与える.
      *
      * @param excitingModule 対象のExcitingModule
