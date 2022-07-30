@@ -14,7 +14,7 @@ describe("Contents Royalty Graph", async () => {
 
   const RBTProps = {
     creatorProp: 2000,
-    cetBurnerProp: 2000,
+    cetHolderProp: 2000,
     cbtStakerProp: 2000,
     primaryProp: 2000,
   };

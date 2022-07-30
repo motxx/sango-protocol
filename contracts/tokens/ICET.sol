@@ -30,27 +30,12 @@ interface ICET {
     function mintAmount(address account, uint256 amount) external;
 
     /**
-     * @notice 自身のCETの保有数を減少させる.
-     *
-     * @param amount 保有数の減少分
-     */
-    function burnAmount(uint256 amount) external;
-
-    /**
      * @notice CETの保有数を返す.
      *
      * @param account 対象のアカウント
      * @return CETの保有数
      */
     function holdingAmount(address account) external view returns (uint256);
-
-    /**
-     * @notice burnしたCETの総量を返す.
-     *
-     * @param account 対象のアカウント
-     * @return burnしたCETの総量
-     */
-    function burnedAmount(address account) external view returns (uint256);
 
     /**
      * @dev 登録済みの ExcitingModule 一覧を返す.

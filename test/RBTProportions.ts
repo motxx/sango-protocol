@@ -20,7 +20,7 @@ describe("RBTProportions", () => {
     it("Should set correct proportions (no treasury)", async () => {
       await rbtProp.setRBTProportions(6000, 2000, 1500, 500);
       expect(await rbtProp.creatorProportion()).to.equal(6000);
-      expect(await rbtProp.cetBurnerProportion()).to.equal(2000);
+      expect(await rbtProp.cetHolderProportion()).to.equal(2000);
       expect(await rbtProp.cbtStakerProportion()).to.equal(1500);
       expect(await rbtProp.primaryProportion()).to.equal(500);
     });

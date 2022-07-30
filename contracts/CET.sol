@@ -15,7 +15,6 @@ contract CET is ERC721, ICET, AccessControl, Ownable {
 
     IExcitingModule[] private _excitingModules;
 
-    mapping (address => uint256) private _burnedAmount;
     mapping (address => uint256) private _holdingAmount;
     mapping (address => uint256) private _accountTokenId;
     Counters.Counter private _nextTokenId;
@@ -57,16 +56,6 @@ contract CET is ERC721, ICET, AccessControl, Ownable {
     }
 
     /// @inheritdoc ICET
-    function burnedAmount(address account)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return _burnedAmount[account];
-    }
-
-    /// @inheritdoc ICET
     function statementOfCommit()
         external
         override
@@ -87,16 +76,6 @@ contract CET is ERC721, ICET, AccessControl, Ownable {
             _excitingModules[i].mintCET(ICET(this), account);
             unchecked { i++; }
         }
-    }
-
-    /// @inheritdoc ICET
-    function burnAmount(uint256 amount)
-        external
-        override
-    {
-        require (_holdingAmount[msg.sender] >= amount, "CET: lack of amount");
-        _holdingAmount[msg.sender] -= amount;
-        _burnedAmount[msg.sender] += amount;
     }
 
     /// @inheritdoc ICET
