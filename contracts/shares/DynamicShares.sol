@@ -162,7 +162,8 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
      */
     function supportsInterface(bytes4 interfaceId)
         public
-        pure
+        virtual
+        view
         override
         returns (bool)
     {
