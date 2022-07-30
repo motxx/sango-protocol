@@ -30,12 +30,8 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
 
     using Address for address;
 
-    event RequestUnstake(address account);
-    event AcceptUnstakeRequest(address account);
-
     CET private _cet;
     WrappedCBT private _wrappedCBT;
-    mapping (address => bool) private _unstakeRequested;
 
     constructor(CtorArgs memory args)
         RBTProportions(args.rbt)
@@ -44,7 +40,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         _getPrimaryShares().initPayees(args.primaries, args.primaryShares);
         setRBTProportions(args.creatorProp, args.cetBurnerProp, args.cbtStakerProp, args.primaryProp);
         _cet = new CET(args.cetName, args.cetSymbol, msg.sender);
-        _wrappedCBT = new WrappedCBT(args.cbt);
+        _wrappedCBT = new WrappedCBT(args.cbt, msg.sender);
     }
 
     /// @inheritdoc ISangoContent
@@ -92,85 +88,6 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         returns (IWrappedCBT)
     {
         return _wrappedCBT;
-    }
-
-    /// @inheritdoc ISangoContent
-    function isStaking(address account)
-        public
-        view
-        override
-        returns (bool)
-    {
-        return _wrappedCBT.isStaking(account);
-    }
-
-    /// @inheritdoc ISangoContent
-    function isUnstakeRequested(address account)
-        external
-        view
-        override
-        returns (bool)
-    {
-        return _unstakeRequested[account];
-    }
-
-    /// @inheritdoc ISangoContent
-    function stake(uint256 amount)
-        external
-        override
-    {
-        _wrappedCBT.stake(msg.sender, amount);
-    }
-
-    /// @inheritdoc ISangoContent
-    function receiveWCBT()
-        external
-        override
-    {
-        _wrappedCBT.receiveWCBT(msg.sender);
-    }
-
-    /// @inheritdoc ISangoContent
-    function requestUnstake()
-        external
-        override
-    {
-        require (isStaking(msg.sender), "SangoContent: no amount staked");
-        require (!_unstakeRequested[msg.sender], "SangoContent: already unstake requested");
-        _unstakeRequested[msg.sender] = true;
-
-        emit RequestUnstake(msg.sender);
-    }
-
-    /// @inheritdoc ISangoContent
-    function acceptUnstakeRequest(address account)
-        external
-        override
-        onlyOwner
-    {
-        require (_unstakeRequested[account], "SangoContent: no unstake request");
-        _unstakeRequested[account] = false;
-        _wrappedCBT.payback(account);
-
-        emit AcceptUnstakeRequest(account);
-    }
-
-    /// @inheritdoc ISangoContent
-    function withdraw(uint256 amount)
-        external
-        override
-        onlyOwner
-    {
-        _wrappedCBT.withdraw(msg.sender, amount);
-    }
-
-    /// @inheritdoc ISangoContent
-    function setLockInterval(uint64 lockInterval)
-        external
-        override
-        onlyOwner
-    {
-        _wrappedCBT.setLockInterval(lockInterval);
     }
 
     // #############################
