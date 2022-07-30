@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
 import { Context } from "@openzeppelin/contracts/utils/Context.sol";
@@ -9,8 +10,10 @@ import { ISangoContent } from "./ISangoContent.sol";
 import { IExcitingModule } from "./components/IExcitingModule.sol";
 import { ICET } from "./tokens/ICET.sol";
 
-contract CET is ERC721, ICET, AccessControl {
+contract CET is ERC721, ICET, AccessControl, Ownable {
     using Counters for Counters.Counter;
+
+    IExcitingModule[] private _excitingModules;
 
     mapping (address => uint256) private _burnedAmount;
     mapping (address => uint256) private _holdingAmount;
@@ -18,7 +21,6 @@ contract CET is ERC721, ICET, AccessControl {
     Counters.Counter private _nextTokenId;
 
     bytes32 constant public EXCITING_MODULE_ROLE = keccak256("EXCITING_MODULE_ROLE");
-    bytes32 constant public SANGO_CONTENT_ROLE = keccak256("SANGO_CONTENT_ROLE");
 
     // ##########################
     // ## Public functions     ##
@@ -26,11 +28,12 @@ contract CET is ERC721, ICET, AccessControl {
 
     constructor(
         string memory name,
-        string memory symbol
+        string memory symbol,
+        address owner_
     )
         ERC721(name, symbol)
     {
-        _setupRole(SANGO_CONTENT_ROLE, msg.sender);
+        transferOwnership(owner_);
     }
 
     function supportsInterface(bytes4 interfaceId)
@@ -63,6 +66,49 @@ contract CET is ERC721, ICET, AccessControl {
         return _burnedAmount[account];
     }
 
+    /// @inheritdoc ICET
+    function statementOfCommit()
+        external
+        override
+    {
+        require (_accountTokenId[msg.sender] == 0, "CET: NFT already minted");
+
+        _nextTokenId.increment();
+        _accountTokenId[msg.sender] = _nextTokenId.current();
+        _mint(msg.sender, _nextTokenId.current());
+    }
+
+    /// @inheritdoc ICET
+    function mintCET(address account)
+        external
+        override
+    {
+        for (uint32 i = 0; i < _excitingModules.length;) {
+            _excitingModules[i].mintCET(ICET(this), account);
+            unchecked { i++; }
+        }
+    }
+
+    /// @inheritdoc ICET
+    function burnAmount(uint256 amount)
+        external
+        override
+    {
+        require (_holdingAmount[msg.sender] >= amount, "CET: lack of amount");
+        _holdingAmount[msg.sender] -= amount;
+        _burnedAmount[msg.sender] += amount;
+    }
+
+    /// @inheritdoc ICET
+    function excitingModules()
+        external
+        view
+        override
+        returns (IExcitingModule[] memory)
+    {
+        return _excitingModules;
+    }
+
     // ##########################
     // ## ExcitingModule Roles ##
     // ##########################
@@ -74,54 +120,28 @@ contract CET is ERC721, ICET, AccessControl {
         onlyRole(EXCITING_MODULE_ROLE)
     {
         require (_accountTokenId[account] > 0, "CET: NFT not minted yet");
-
         _holdingAmount[account] += amount;
     }
 
     // ##########################
-    // ## SangoContent Roles   ##
+    // ## Owner Roles          ##
     // ##########################
 
     /// @inheritdoc ICET
-    function mintNFT(address account)
+    function setExcitingModules(IExcitingModule[] calldata newExcitingModules)
         external
         override
-        onlyRole(SANGO_CONTENT_ROLE)
+        onlyOwner
     {
-        require (_accountTokenId[account] == 0, "CET: NFT already minted");
-
-        _nextTokenId.increment();
-        _accountTokenId[account] = _nextTokenId.current();
-        _mint(account, _nextTokenId.current());
-    }
-
-    /// @inheritdoc ICET
-    function burnAmount(address account, uint256 amount)
-        external
-        override
-        onlyRole(SANGO_CONTENT_ROLE)
-    {
-        require (_holdingAmount[account] >= amount, "CET: lack of amount");
-        _holdingAmount[account] -= amount;
-        _burnedAmount[account] += amount;
-    }
-
-    /// @inheritdoc ICET
-    function grantExcitingModule(IExcitingModule excitingModule)
-        public
-        override
-        onlyRole(SANGO_CONTENT_ROLE)
-    {
-        _grantRole(EXCITING_MODULE_ROLE, address(excitingModule));
-    }
-
-    /// @inheritdoc ICET
-    function revokeExcitingModule(IExcitingModule excitingModule)
-        public
-        override
-        onlyRole(SANGO_CONTENT_ROLE)
-    {
-        revokeRole(EXCITING_MODULE_ROLE, address(excitingModule));
+        for (uint32 i = 0; i < _excitingModules.length;) {
+            _revokeRole(EXCITING_MODULE_ROLE, address(_excitingModules[i]));
+            unchecked { i++; }
+        }
+        for (uint32 i = 0; i < newExcitingModules.length;) {
+            _grantRole(EXCITING_MODULE_ROLE, address(newExcitingModules[i]));
+            unchecked { i++; }
+        }
+        _excitingModules = newExcitingModules;
     }
 
     // ########################

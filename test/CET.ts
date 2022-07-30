@@ -3,45 +3,141 @@ import { ethers } from "hardhat";
 import { solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract } from "ethers";
+import { deploySango } from "./helpers/utils";
 
 chai.use(solidity);
 
 describe("Content Excited Token", async () => {
-  let contentOwner: SignerWithAddress;
+  let cetOwner: SignerWithAddress;
   let excitingModule: SignerWithAddress;
   let s1: SignerWithAddress;
   let cet: Contract;
 
   beforeEach(async () => {
-    [, contentOwner, excitingModule, s1] = await ethers.getSigners();
+    [, cetOwner, excitingModule, s1] = await ethers.getSigners();
     const CET = await ethers.getContractFactory("CET");
-    cet = await CET.connect(contentOwner).deploy("Test CET", "TCET");
+    cet = await CET.connect(cetOwner).deploy("Test CET", "TCET", cetOwner.address);
   });
 
   describe("When CET modules are set up", async () => {
     beforeEach(async () => {
-      await cet.connect(contentOwner).grantExcitingModule(excitingModule.address);
+      await cet.connect(cetOwner).setExcitingModules([excitingModule.address]);
     });
 
-    it("Should mintNFT", async () => {
-      await cet.connect(contentOwner).mintNFT(s1.address);
+    it("Should statementOfCommit", async () => {
+      await cet.connect(s1).statementOfCommit();
       expect(await cet.balanceOf(s1.address)).equals(1);
       expect(await cet.holdingAmount(s1.address)).equals(0);
     });
   
     it("Should mintAmount", async () => {
-      await cet.connect(contentOwner).mintNFT(s1.address);
+      await cet.connect(s1).statementOfCommit();
       await cet.connect(excitingModule).mintAmount(s1.address, 1000);
       expect(await cet.balanceOf(s1.address)).equals(1);
       expect(await cet.holdingAmount(s1.address)).equals(1000);
     });
 
     it("Should burnAmount", async () => {
-      await cet.connect(contentOwner).mintNFT(s1.address);
+      await cet.connect(s1).statementOfCommit();
       await cet.connect(excitingModule).mintAmount(s1.address, 1000);
-      await cet.connect(contentOwner).burnAmount(s1.address, 200);
+      await cet.connect(s1).burnAmount(200);
       expect(await cet.balanceOf(s1.address)).equals(1);
       expect(await cet.holdingAmount(s1.address)).equals(800);
     });
+  
+    /*
+    it("Should mintCET", async () => {
+      await cet.connect(s1).statementOfCommit();
+      await cet.connect(s1).mintCET(s1.address); // TODO: Implement mint logic to calc CET value.
+      expect(await cet.balanceOf(s1.address)).equals(1);
+      expect(await cet.holdingAmount(s1.address)).equals(1000);
+    });
+    */
+  });
+});
+
+describe("Delegate CET mint to ExcitingModule", async () => {
+  let rbt: Contract;
+  let cbt: Contract;
+  let cet: Contract;
+  let s1: SignerWithAddress;
+  let sango: Contract;
+
+  const RBTProps = {
+    creatorProp: 2000,
+    cetBurnerProp: 2000,
+    cbtStakerProp: 2000,
+    primaryProp: 2000,
+  };
+
+  beforeEach(async () => {
+    [, s1] = await ethers.getSigners();
+
+    const RBT = await ethers.getContractFactory("RBT");
+    rbt = await RBT.deploy();
+    const CBT = await ethers.getContractFactory("CBT");
+    cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
+    sango = await deploySango({
+      rbt: rbt.address,
+      cbt: cbt.address,
+      creators: [s1.address],
+      creatorShares: [1],
+      primaries: [] as string[],
+      primaryShares: [] as number[],
+      ...RBTProps,
+    });
+    cet = await ethers.getContractAt("CET", await sango.cet());
+  });
+
+  it("Should mintCET / burnCET", async () => {
+    const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
+    const em1 = await ExcitingModule.deploy();
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mo1 = await MockOracle.deploy();
+
+    await em1.setCETOracle(cet.address, mo1.address);
+
+    await cet.setExcitingModules([em1.address]);
+    await cet.connect(s1).statementOfCommit();
+    await cet.connect(s1).mintCET(s1.address);
+    expect(await cet.balanceOf(s1.address)).equals(1);
+    expect(await cet.holdingAmount(s1.address)).equals(10000);
+    await cet.connect(s1).burnAmount(9000);
+    expect(await cet.burnedAmount(s1.address)).equals(9000);
+    expect(await cet.holdingAmount(s1.address)).equals(1000);
+  });
+
+  it("Should mintCET by multiple exciting modules", async () => {
+    const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
+    const em1 = await ExcitingModule.deploy();
+    const em2 = await ExcitingModule.deploy();
+
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mo1 = await MockOracle.deploy();
+    const mo2 = await MockOracle.deploy();
+
+    await em1.setCETOracle(cet.address, mo1.address);
+    await em2.setCETOracle(cet.address, mo2.address);
+
+    await cet.setExcitingModules([em1.address, em2.address]);
+    await cet.connect(s1).statementOfCommit();
+    await cet.connect(s1).mintCET(s1.address);
+    expect(await cet.holdingAmount(s1.address)).equals(20000);
+  });
+
+  it("Should not mintCET if no additional engagement got", async () => {
+    const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
+    const em1 = await ExcitingModule.deploy();
+
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mo1 = await MockOracle.deploy();
+
+    await em1.setCETOracle(cet.address, mo1.address);
+
+    await cet.setExcitingModules([em1.address]);
+    await cet.connect(s1).statementOfCommit();
+    await cet.connect(s1).mintCET(s1.address);
+    await expect(cet.connect(s1).mintCET(s1.address)).to.revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'ExcitingModule: no amount to mint'");
   });
 });
