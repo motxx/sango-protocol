@@ -13,6 +13,7 @@ import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 import { WrappedCBT } from "./WrappedCBT.sol";
 
 contract SangoContent is ISangoContent, Ownable, RBTProportions {
+    // XXX: Deal with `Stack Too Deep`
     struct CtorArgs {
         IERC20 rbt;
         IERC20 cbt;
