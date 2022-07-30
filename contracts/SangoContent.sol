@@ -21,7 +21,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         address[] primaries;
         uint256[] primaryShares;
         uint32 creatorProp;
-        uint32 cetBurnerProp;
+        uint32 cetHolderProp;
         uint32 cbtStakerProp;
         uint32 primaryProp;
         string cetName;
@@ -38,7 +38,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     {
         _getCreatorShares().initPayees(args.creators, args.creatorShares);
         _getPrimaryShares().initPayees(args.primaries, args.primaryShares);
-        setRBTProportions(args.creatorProp, args.cetBurnerProp, args.cbtStakerProp, args.primaryProp);
+        setRBTProportions(args.creatorProp, args.cetHolderProp, args.cbtStakerProp, args.primaryProp);
         _cet = new CET(args.cetName, args.cetSymbol, msg.sender);
         _wrappedCBT = new WrappedCBT(args.cbt, msg.sender);
     }
@@ -46,7 +46,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     /// @inheritdoc ISangoContent
     function setRBTProportions(
         uint32 creatorProp,
-        uint32 cetBurnerProp,
+        uint32 cetHolderProp,
         uint32 cbtStakerProp,
         uint32 primaryProp
     )
@@ -56,7 +56,7 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     {
         RBTProportions.setRBTProportions(
             creatorProp,
-            cetBurnerProp,
+            cetHolderProp,
             cbtStakerProp,
             primaryProp
         );

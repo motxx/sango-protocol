@@ -6,19 +6,19 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { DynamicShares } from "./DynamicShares.sol";
 
 /**
- * @dev CET Burner に RBT を分配する.
- * 現時点で CET Burner は EOA のみ許可.
- * TODO: CET Burner に SangoContent を追加.
+ * @dev CET Holder に RBT を分配する.
+ * 現時点で CET Holder は EOA のみ許可.
+ * TODO: CET Holder に SangoContent を追加.
  */
-contract CETBurnerShares is DynamicShares {
+contract CETHolderShares is DynamicShares {
     using Address for address;
 
-    // プロジェクト別にCET Burnerが存在するので、最大値は1024でも多い方.
+    // プロジェクト別にCET Holderが存在するので、最大値は1024でも多い方.
     // TODO: 1024でreleaseにgasが問題ないか調査.
-    uint32 constant public MAX_CET_BURNERS = 1024;
+    uint32 constant public MAX_CET_HOLDERS = 1024;
 
     constructor(IERC20 rbt)
-        DynamicShares(rbt, MAX_CET_BURNERS)
+        DynamicShares(rbt, MAX_CET_HOLDERS)
     {
     }
 
@@ -26,7 +26,7 @@ contract CETBurnerShares is DynamicShares {
         public
         onlyOwner
     {
-        require(!payee.isContract(), "CETBurnerShares: currently only EOA supported");
+        require(!payee.isContract(), "CETHolderShares: currently only EOA supported");
         _addPayee(payee, share);
     }
 }

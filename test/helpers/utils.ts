@@ -10,7 +10,7 @@ export type SangoCtorArgs = {
   primaries: string[];
   primaryShares: number[];
   creatorProp: number;
-  cetBurnerProp: number;
+  cetHolderProp: number;
   cbtStakerProp: number;
   primaryProp: number;
   cetName?: string;

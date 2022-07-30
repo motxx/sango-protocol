@@ -35,7 +35,7 @@ describe("ExchangeService", () => {
       primaries: [] as string[],
       primaryShares: [] as number[],
       creatorProp: 10000,
-      cetBurnerProp: 0,
+      cetHolderProp: 0,
       cbtStakerProp: 0,
       primaryProp: 0,
     });
@@ -49,7 +49,7 @@ describe("ExchangeService", () => {
       primaries: [sango1.address],
       primaryShares: [1],
       creatorProp: 5000,
-      cetBurnerProp: 0,
+      cetHolderProp: 0,
       cbtStakerProp: 0,
       primaryProp: 5000,
     });
@@ -168,7 +168,7 @@ describe("distribute on DAG", () => {
         primaries,
         primaryShares,
         creatorProp: 10000 - primaryProp,
-        cetBurnerProp: 0,
+        cetHolderProp: 0,
         cbtStakerProp: 0,
         primaryProp,
       });

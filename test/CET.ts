@@ -37,14 +37,6 @@ describe("Content Excited Token", async () => {
       expect(await cet.holdingAmount(s1.address)).equals(1000);
     });
 
-    it("Should burnAmount", async () => {
-      await cet.connect(s1).statementOfCommit();
-      await cet.connect(excitingModule).mintAmount(s1.address, 1000);
-      await cet.connect(s1).burnAmount(200);
-      expect(await cet.balanceOf(s1.address)).equals(1);
-      expect(await cet.holdingAmount(s1.address)).equals(800);
-    });
-  
     /*
     it("Should mintCET", async () => {
       await cet.connect(s1).statementOfCommit();
@@ -65,7 +57,7 @@ describe("Delegate CET mint to ExcitingModule", async () => {
 
   const RBTProps = {
     creatorProp: 2000,
-    cetBurnerProp: 2000,
+    cetHolderProp: 2000,
     cbtStakerProp: 2000,
     primaryProp: 2000,
   };
@@ -89,7 +81,7 @@ describe("Delegate CET mint to ExcitingModule", async () => {
     cet = await ethers.getContractAt("CET", await sango.cet());
   });
 
-  it("Should mintCET / burnCET", async () => {
+  it("Should mintCET", async () => {
     const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
     const em1 = await ExcitingModule.deploy();
     const MockOracle = await ethers.getContractFactory("MockOracle");
@@ -102,9 +94,6 @@ describe("Delegate CET mint to ExcitingModule", async () => {
     await cet.connect(s1).mintCET(s1.address);
     expect(await cet.balanceOf(s1.address)).equals(1);
     expect(await cet.holdingAmount(s1.address)).equals(10000);
-    await cet.connect(s1).burnAmount(9000);
-    expect(await cet.burnedAmount(s1.address)).equals(9000);
-    expect(await cet.holdingAmount(s1.address)).equals(1000);
   });
 
   it("Should mintCET by multiple exciting modules", async () => {

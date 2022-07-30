@@ -11,11 +11,11 @@ interface ISangoContent {
      * 全体で10000を超えて設定することはできない. 余剰分はTreasuryに入る.
      *
      * @param creatorProp クリエイター側の取り分
-     * @param cetBurnerProp CET Burner の全体の取り分
+     * @param cetHolderProp CET Holder の全体の取り分
      * @param cbtStakerProp CBT Staker の全体の取り分
      * @param primaryProp addPrimary したコンテンツの全体の取り分
      */
-    function setRBTProportions(uint32 creatorProp, uint32 cetBurnerProp, uint32 cbtStakerProp, uint32 primaryProp) external; // onlyOwner
+    function setRBTProportions(uint32 creatorProp, uint32 cetHolderProp, uint32 cbtStakerProp, uint32 primaryProp) external; // onlyOwner
 
     // #############################
     // ## Contents Royalty Graph  ##

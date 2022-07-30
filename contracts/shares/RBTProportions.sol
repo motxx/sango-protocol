@@ -2,26 +2,26 @@
 pragma solidity ^0.8.0;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { CETBurnerShares } from "./CETBurnerShares.sol";
+import { CETHolderShares } from "./CETHolderShares.sol";
 import { DynamicShares } from "./DynamicShares.sol";
 import { CreatorShares } from "./CreatorShares.sol";
-import { CETBurnerShares } from "./CETBurnerShares.sol";
+import { CETHolderShares } from "./CETHolderShares.sol";
 import { CBTStakerShares } from "./CBTStakerShares.sol";
 import { PrimaryShares } from "./PrimaryShares.sol";
 
 /**
- * @dev SangoContent に流入した RBT を Creator, CET Burner,
+ * @dev SangoContent に流入した RBT を Creator, CET Holder,
  * CBT Staker, Primaries に分配する. 余剰分は Treasury に蓄積される.
  */
 contract RBTProportions is DynamicShares {
     CreatorShares private _creatorShares;
-    CETBurnerShares private _cetBurnerShares;
+    CETHolderShares private _cetHolderShares;
     CBTStakerShares private _cbtStakerShares;
     PrimaryShares private _primaryShares;
 
     IERC20 private _rbt;
 
-    // Creators, CET Burners, CBTStakers, Primaries, Treasury
+    // Creators, CET Holders, CBTStakers, Primaries, Treasury
     uint32 constant public MAX_PAYEES = 5;
 
     constructor(IERC20 rbt)
@@ -29,7 +29,7 @@ contract RBTProportions is DynamicShares {
     {
         _rbt = rbt;
         _creatorShares = new CreatorShares(_rbt);
-        _cetBurnerShares = new CETBurnerShares(_rbt);
+        _cetHolderShares = new CETHolderShares(_rbt);
         _cbtStakerShares = new CBTStakerShares(_rbt);
         _primaryShares = new PrimaryShares(_rbt);
     }
@@ -39,32 +39,32 @@ contract RBTProportions is DynamicShares {
      *
      * RBTの入手方法により分配が変化する
      * 1) 直接 Royalty Provider から transfer された場合
-     *    この場合は、Creator / CET Burner / CBT Staker / Primaries に対して設定した比率で分配される
+     *    この場合は、Creator / CET Holder / CBT Staker / Primaries に対して設定した比率で分配される
      *    余剰分は Treasury として SangoContent に残る.
      *
-     * 2) TODO: Primary より CET Burner として分配された場合
-     *    この場合は、Primaries を除いた Creator / CET Burner / CBT Staker に対して設定した比率が拡張され分配される
+     * 2) TODO: Primary より CET Holder として分配された場合
+     *    この場合は、Primaries を除いた Creator / CET Holder / CBT Staker に対して設定した比率が拡張され分配される
      */
     function setRBTProportions(
         uint32 creatorProp,
-        uint32 cetBurnerProp,
+        uint32 cetHolderProp,
         uint32 cbtStakerProp,
         uint32 primaryProp
     )
         public
         virtual
     {
-        require(creatorProp + cetBurnerProp + cbtStakerProp + primaryProp <= 10000,
+        require(creatorProp + cetHolderProp + cbtStakerProp + primaryProp <= 10000,
             "RBTProportions: sum proportions <= 10000");
 
         _resetPayees();
         _addPayee(address(_creatorShares), creatorProp);
-        _addPayee(address(_cetBurnerShares), cetBurnerProp);
+        _addPayee(address(_cetHolderShares), cetHolderProp);
         _addPayee(address(_cbtStakerShares), cbtStakerProp);
         _addPayee(address(_primaryShares), primaryProp);
 
         uint256 treasuryProp =
-            10000 - (creatorProp + cetBurnerProp + cbtStakerProp + primaryProp);
+            10000 - (creatorProp + cetHolderProp + cbtStakerProp + primaryProp);
         if (treasuryProp > 0) {
             // 10000 未満の場合、余剰分が Treasury に蓄積する.
             _addPayee(address(this), treasuryProp);
@@ -83,14 +83,14 @@ contract RBTProportions is DynamicShares {
     }
 
     /**
-     * @dev CET Burner の分配率を取得.
+     * @dev CET Holder の分配率を取得.
      */
-    function cetBurnerProportion()
+    function cetHolderProportion()
         public
         view
         returns (uint32)
     {
-        return uint32(shares(address(_cetBurnerShares)));
+        return uint32(shares(address(_cetHolderShares)));
     }
 
     /**
@@ -135,13 +135,13 @@ contract RBTProportions is DynamicShares {
         _creatorShares.release(account);
     }
 
-    function releaseCETBurnerShares(address account)
+    function releaseCETHolderShares(address account)
         public
     {
-        if (pendingPaymentExists(address(_cetBurnerShares))) {
-            release(address(_cetBurnerShares));
+        if (pendingPaymentExists(address(_cetHolderShares))) {
+            release(address(_cetHolderShares));
         }
-        _cetBurnerShares.release(account);
+        _cetHolderShares.release(account);
     }
 
     function releaseCBTStakerShares(address account)
@@ -175,15 +175,15 @@ contract RBTProportions is DynamicShares {
     }
 
     /**
-     * @dev CETBurnerShares の取得
+     * @dev CETHolderShares の取得
      */
-    function _getCETBurnerShares()
+    function _getCETHolderShares()
         internal
         view
         virtual
-        returns (CETBurnerShares)
+        returns (CETHolderShares)
     {
-        return _cetBurnerShares;
+        return _cetHolderShares;
     }
 
     /**
