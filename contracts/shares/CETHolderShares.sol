@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { DynamicShares } from "./DynamicShares.sol";
@@ -10,7 +11,7 @@ import { DynamicShares } from "./DynamicShares.sol";
  * 現時点で CET Holder は EOA のみ許可.
  * TODO: CET Holder に SangoContent を追加.
  */
-contract CETHolderShares is DynamicShares {
+contract CETHolderShares is DynamicShares, Ownable {
     using Address for address;
 
     // プロジェクト別にCET Holderが存在するので、最大値は1024でも多い方.
