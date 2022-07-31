@@ -30,17 +30,17 @@ describe("Content Excited Token", async () => {
       expect(await cet.holdingAmount(s1.address)).equals(0);
     });
   
-    it("Should mintAmount", async () => {
+    it("Should mintCET", async () => {
       await cet.connect(s1).statementOfCommit();
-      await cet.connect(excitingModule).mintAmount(s1.address, 1000);
+      await cet.connect(excitingModule).mintCET(s1.address, 1000);
       expect(await cet.balanceOf(s1.address)).equals(1);
       expect(await cet.holdingAmount(s1.address)).equals(1000);
     });
 
     /*
-    it("Should mintCET", async () => {
+    it("Should claimCET", async () => {
       await cet.connect(s1).statementOfCommit();
-      await cet.connect(s1).mintCET(s1.address); // TODO: Implement mint logic to calc CET value.
+      await cet.connect(s1).claimCET(s1.address); // TODO: Implement mint logic to calc CET value.
       expect(await cet.balanceOf(s1.address)).equals(1);
       expect(await cet.holdingAmount(s1.address)).equals(1000);
     });
@@ -81,7 +81,7 @@ describe("Delegate CET mint to ExcitingModule", async () => {
     cet = await ethers.getContractAt("CET", await sango.cet());
   });
 
-  it("Should mintCET", async () => {
+  it("Should claimCET", async () => {
     const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
     const em1 = await ExcitingModule.deploy();
     const MockOracle = await ethers.getContractFactory("MockOracle");
@@ -91,12 +91,12 @@ describe("Delegate CET mint to ExcitingModule", async () => {
 
     await cet.setExcitingModules([em1.address]);
     await cet.connect(s1).statementOfCommit();
-    await cet.connect(s1).mintCET(s1.address);
+    await cet.connect(s1).claimCET(s1.address);
     expect(await cet.balanceOf(s1.address)).equals(1);
     expect(await cet.holdingAmount(s1.address)).equals(10000);
   });
 
-  it("Should mintCET by multiple exciting modules", async () => {
+  it("Should claimCET by multiple exciting modules", async () => {
     const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
     const em1 = await ExcitingModule.deploy();
     const em2 = await ExcitingModule.deploy();
@@ -110,11 +110,11 @@ describe("Delegate CET mint to ExcitingModule", async () => {
 
     await cet.setExcitingModules([em1.address, em2.address]);
     await cet.connect(s1).statementOfCommit();
-    await cet.connect(s1).mintCET(s1.address);
+    await cet.connect(s1).claimCET(s1.address);
     expect(await cet.holdingAmount(s1.address)).equals(20000);
   });
 
-  it("Should not mintCET if no additional engagement got", async () => {
+  it("Should not claimCET if no additional engagement got", async () => {
     const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
     const em1 = await ExcitingModule.deploy();
 
@@ -125,8 +125,8 @@ describe("Delegate CET mint to ExcitingModule", async () => {
 
     await cet.setExcitingModules([em1.address]);
     await cet.connect(s1).statementOfCommit();
-    await cet.connect(s1).mintCET(s1.address);
-    await expect(cet.connect(s1).mintCET(s1.address)).to.revertedWith(
+    await cet.connect(s1).claimCET(s1.address);
+    await expect(cet.connect(s1).claimCET(s1.address)).to.revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'ExcitingModule: no amount to mint'");
   });
 });

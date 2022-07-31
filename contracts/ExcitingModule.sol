@@ -18,7 +18,7 @@ contract ExcitingModule is IExcitingModule, Ownable {
         uint256 amount = _getTotalEngagement(cet, account) - _alreadyMinted[cet][account];
         require (amount > 0, "ExcitingModule: no amount to mint");
         _alreadyMinted[cet][account] += amount;
-        cet.mintAmount(account, amount);
+        cet.mintCET(account, amount);
     }
 
     /// @inheritdoc IExcitingModule

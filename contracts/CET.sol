@@ -68,7 +68,7 @@ contract CET is ERC721, ICET, AccessControl, Ownable {
     }
 
     /// @inheritdoc ICET
-    function mintCET(address account)
+    function claimCET(address account)
         external
         override
     {
@@ -93,7 +93,7 @@ contract CET is ERC721, ICET, AccessControl, Ownable {
     // ##########################
 
     /// @inheritdoc ICET
-    function mintAmount(address account, uint256 amount)
+    function mintCET(address account, uint256 amount)
         external
         override
         onlyRole(EXCITING_MODULE_ROLE)
