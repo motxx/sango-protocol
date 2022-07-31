@@ -272,12 +272,12 @@ describe("E2E", () => {
     await cbt.connect(s5).approve(wCBT4.address, 100);
     await wCBT4.connect(s5).stake(100);
 
-    // s1, s3 ~ s5 receive wCBT.
-    await wCBT1.connect(s1).receiveWCBT();
-    /* s2 not received yet */
-    await wCBT2.connect(s3).receiveWCBT();
-    await wCBT3.connect(s4).receiveWCBT();
-    await wCBT4.connect(s5).receiveWCBT();
+    // s1, s3 ~ s5 claim wCBT.
+    await wCBT1.connect(s1).claimWCBT();
+    /* s2 not claimed yet */
+    await wCBT2.connect(s3).claimWCBT();
+    await wCBT3.connect(s4).claimWCBT();
+    await wCBT4.connect(s5).claimWCBT();
 
     // - Execute & Verify -
     // Mint royalties to C4 and distribute them.
@@ -301,8 +301,8 @@ describe("E2E", () => {
     await C1.releaseCBTStakerShares(s1.address);
     expect(await rbt.balanceOf(s1.address)).to.equal(180);
 
-    // s2 receives wCBT, but cannot get royalties.
-    await wCBT2.connect(s2).receiveWCBT();
+    // s2 claims wCBT, but cannot get royalties.
+    await wCBT2.connect(s2).claimWCBT();
     await expect(C2.releaseCBTStakerShares(s2.address)).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'DynamicShares: account is not due payment'");
   });

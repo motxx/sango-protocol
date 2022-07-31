@@ -25,7 +25,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT, ReentrancyGuard {
     ICBTStakerShares private _cbtStakerShares;
     uint256 private _minAmount;
     uint private _lockInterval;
-    mapping (address => uint256) private _receivedStakeAmounts;
+    mapping (address => uint256) private _claimedStakeAmounts;
     mapping (address => PendingReceiveStake) private _pendingReceiveStakes;
     mapping (address => bool) private _paybackRequested;
 
@@ -49,19 +49,19 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT, ReentrancyGuard {
     {
         require (_paybackRequested[account], "SangoContent: no payback request");
 
-        uint256 receivedAmount = _receivedStakeAmounts[account];
+        uint256 claimedAmount = _claimedStakeAmounts[account];
         uint256 pendingAmount = _pendingReceiveStakes[account].amount;
-        uint256 totalAmount = receivedAmount + pendingAmount;
+        uint256 totalAmount = claimedAmount + pendingAmount;
 
         require (totalAmount > 0, "WrappedCBT: no amount deposited");
         require (_cbt.balanceOf(address(this)) >= totalAmount, "WrappedCBT: lack of CBT balance");
 
         _paybackRequested[account] = false;
-        delete _receivedStakeAmounts[account];
+        delete _claimedStakeAmounts[account];
         delete _pendingReceiveStakes[account];
 
-        if (receivedAmount > 0) {
-            _burn(account, receivedAmount);
+        if (claimedAmount > 0) {
+            _burn(account, claimedAmount);
         }
         _cbt.transfer(account, totalAmount);
 
@@ -116,7 +116,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT, ReentrancyGuard {
         override
         returns (bool)
     {
-        return _receivedStakeAmounts[account] > 0
+        return _claimedStakeAmounts[account] > 0
             || _pendingReceiveStakes[account].amount > 0;
     }
 
@@ -137,7 +137,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT, ReentrancyGuard {
     {
         require (amount >= _minAmount, "WrappedCBT: less than minAmount");
         require (_pendingReceiveStakes[msg.sender].amount == 0, "WrappedCBT: pending stake exists");
-        require (_receivedStakeAmounts[msg.sender] == 0, "WrappedCBT: already staked");
+        require (_claimedStakeAmounts[msg.sender] == 0, "WrappedCBT: already staked");
 
         _pendingReceiveStakes[msg.sender] = PendingReceiveStake(block.timestamp, amount);
 
@@ -145,7 +145,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT, ReentrancyGuard {
     }
 
     /// @inheritdoc IWrappedCBT
-    function receiveWCBT()
+    function claimWCBT()
         external
         override
     {
@@ -155,7 +155,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT, ReentrancyGuard {
         require (ps.stakedTimestamp + _lockInterval <= block.timestamp, "WrappedCBT: within lock interval");
 
         uint256 amount = ps.amount;
-        _receivedStakeAmounts[msg.sender] += amount;
+        _claimedStakeAmounts[msg.sender] += amount;
 
         delete _pendingReceiveStakes[msg.sender];
 

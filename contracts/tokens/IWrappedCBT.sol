@@ -75,7 +75,7 @@ interface IWrappedCBT {
     /**
      * @notice 権利確定済のwCBTを受け取る.
      */
-    function receiveWCBT() external;
+    function claimWCBT() external;
 
     /**
      * @notice 返済を要求する.

@@ -44,7 +44,7 @@ describe("Wrapped CBT", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 1000);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.connect(s1).stake(100);
-    await wCBT.connect(s1).receiveWCBT();
+    await wCBT.connect(s1).claimWCBT();
     expect(await cbt.balanceOf(s1.address)).equals(900);
     expect(await wCBT.balanceOf(s1.address)).equals(100);
     expect(await wCBT.isStaking(s1.address)).true;
@@ -55,7 +55,7 @@ describe("Wrapped CBT", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 1000);
     await cbt.connect(s1).approve(wCBT.address, 200);
     await wCBT.connect(s1).stake(100);
-    await wCBT.connect(s1).receiveWCBT();
+    await wCBT.connect(s1).claimWCBT();
     await expect(wCBT.connect(s1).stake(100)).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: already staked'");
 
@@ -64,7 +64,7 @@ describe("Wrapped CBT", async () => {
     await wCBT.acceptPayback(s1.address);
     await cbt.connect(s1).approve(wCBT.address, 200);
     await wCBT.connect(s1).stake(200);
-    await wCBT.connect(s1).receiveWCBT();
+    await wCBT.connect(s1).claimWCBT();
     expect(await cbt.balanceOf(s1.address)).equals(800);
     expect(await wCBT.balanceOf(s1.address)).equals(200);
   });
@@ -78,34 +78,34 @@ describe("Wrapped CBT", async () => {
     await wCBT.connect(s1).stake(200);
   });
 
-  it("Should receiveWCBT after lock interval", async () => {
+  it("Should claimWCBT after lock interval", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 1000);
     await wCBT.setLockInterval(100);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await ethers.provider.send("evm_mine", [10000000000]);
     await wCBT.connect(s1).stake(100);
     await ethers.provider.send("evm_mine", [10000000110]);
-    await wCBT.connect(s1).receiveWCBT();
+    await wCBT.connect(s1).claimWCBT();
     expect(await cbt.balanceOf(s1.address)).equals(900);
     expect(await wCBT.balanceOf(s1.address)).equals(100);
-    expect(await wCBT.isStaking(s1.address)).true; // staking should be true after receiveWCBT
+    expect(await wCBT.isStaking(s1.address)).true; // staking should be true after claimWCBT
   });
 
-  it("Should receiveWCBT if lock interval not set", async () => {
+  it("Should claimWCBT if lock interval not set", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 1000);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.connect(s1).stake(100);
-    await wCBT.connect(s1).receiveWCBT();
+    await wCBT.connect(s1).claimWCBT();
     expect(await cbt.balanceOf(s1.address)).equals(900);
     expect(await wCBT.balanceOf(s1.address)).equals(100);
   });
 
-  it("Should not receiveWCBT before lock interval", async () => {
+  it("Should not claimWCBT before lock interval", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 1000);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.connect(s1).stake(100);
     await wCBT.setLockInterval(100); // XXX: stake後でも、wCBTの引き落とし前ならロックの効果がある
-    await (expect(wCBT.connect(s1).receiveWCBT())).revertedWith(
+    await (expect(wCBT.connect(s1).claimWCBT())).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: within lock interval'");
   });
 
@@ -119,11 +119,11 @@ describe("Wrapped CBT", async () => {
     expect(await wCBT.balanceOf(s1.address)).equals(0);
   });
 
-  it("Should acceptPayback after receivedWCBT", async () => {
+  it("Should acceptPayback after claimWCBT", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 100);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.connect(s1).stake(100);
-    await wCBT.connect(s1).receiveWCBT();
+    await wCBT.connect(s1).claimWCBT();
     await wCBT.connect(s1).requestPayback();
     await wCBT.acceptPayback(s1.address);
     expect(await cbt.balanceOf(s1.address)).equals(100);
