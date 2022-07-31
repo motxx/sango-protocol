@@ -16,7 +16,8 @@ interface ICET {
      * Exciting Serviceは 引数のaccountに対してどれくらいCETがMintできるかを算出, Mintする
      * Note: CET は Primary に対して発行することはできない。
      * 理由として、二次創作を楽しむ(Excited)一次創作は存在しないため
-
+     * コンテンツにclaimさせる場合もあるため、引数指定が必要になっている. 誰でも他人の claim が可能な点に注意(TODO: 要再考).
+     *
      * @param account CETをMintするアドレス.
      */
     function claimCET(address account) external;

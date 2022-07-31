@@ -36,10 +36,11 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     constructor(CtorArgs memory args)
         RBTProportions(args.rbt)
     {
-        _cet = new CET(args.cetName, args.cetSymbol, msg.sender);
         _wrappedCBT = new WrappedCBT(args.cbt, _getCBTStakerShares(), msg.sender);
+        _cet = new CET(args.cetName, args.cetSymbol, _getCETHolderShares(), msg.sender);
 
         _getCBTStakerShares().grantWrappedCBTRole(_wrappedCBT);
+        _getCETHolderShares().grantCETRole(_cet);
         _getCreatorShares().initPayees(args.creators, args.creatorShares);
         _getPrimaryShares().initPayees(args.primaries, args.primaryShares);
         setRBTProportions(args.creatorProp, args.cetHolderProp, args.cbtStakerProp, args.primaryProp);
