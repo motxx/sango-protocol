@@ -19,7 +19,7 @@ interface ICET {
 
      * @param account CETをMintするアドレス.
      */
-    function mintCET(address account) external;
+    function claimCET(address account) external;
 
     /**
      * @notice アカウントのCETの保有数を増加させる.
@@ -27,7 +27,7 @@ interface ICET {
      * @param account 対象アカウント
      * @param amount 保有数の増分
      */
-    function mintAmount(address account, uint256 amount) external;
+    function mintCET(address account, uint256 amount) external;
 
     /**
      * @notice CETの保有数を返す.
