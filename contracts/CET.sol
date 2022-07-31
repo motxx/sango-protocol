@@ -3,18 +3,20 @@ pragma solidity ^0.8.0;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Counters } from "@openzeppelin/contracts/utils/Counters.sol";
 import { Context } from "@openzeppelin/contracts/utils/Context.sol";
 import { ISangoContent } from "./ISangoContent.sol";
 import { IExcitingModule } from "./components/IExcitingModule.sol";
+import { ICETHolderShares } from "./shares/ICETHolderShares.sol";
 import { ICET } from "./tokens/ICET.sol";
 
-contract CET is ERC721, ICET, AccessControl, Ownable {
+contract CET is ERC721, ICET, AccessControl, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
 
     IExcitingModule[] private _excitingModules;
-
+    ICETHolderShares private _cetHolderShares;
     mapping (address => uint256) private _holdingAmount;
     mapping (address => uint256) private _accountTokenId;
     Counters.Counter private _nextTokenId;
@@ -28,10 +30,12 @@ contract CET is ERC721, ICET, AccessControl, Ownable {
     constructor(
         string memory name,
         string memory symbol,
+        ICETHolderShares cetHolderShares,
         address owner_
     )
         ERC721(name, symbol)
     {
+        _cetHolderShares = cetHolderShares;
         transferOwnership(owner_);
     }
 
@@ -59,23 +63,27 @@ contract CET is ERC721, ICET, AccessControl, Ownable {
     function statementOfCommit()
         external
         override
+        nonReentrant
     {
         require (_accountTokenId[msg.sender] == 0, "CET: NFT already minted");
 
         _nextTokenId.increment();
         _accountTokenId[msg.sender] = _nextTokenId.current();
         _mint(msg.sender, _nextTokenId.current());
+        _cetHolderShares.addPayee(msg.sender, 0);
     }
 
     /// @inheritdoc ICET
     function claimCET(address account)
         external
         override
+        nonReentrant
     {
         for (uint32 i = 0; i < _excitingModules.length;) {
             _excitingModules[i].mintCET(ICET(this), account);
             unchecked { i++; }
         }
+        _cetHolderShares.updatePayee(account, _holdingAmount[account]);
     }
 
     /// @inheritdoc ICET

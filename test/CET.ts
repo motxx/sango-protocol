@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract } from "ethers";
-import { deploySango } from "./helpers/utils";
+import { deploySango, deploySangoBy } from "./helpers/utils";
 
 chai.use(solidity);
 
@@ -15,8 +15,26 @@ describe("Content Excited Token", async () => {
 
   beforeEach(async () => {
     [, cetOwner, excitingModule, s1] = await ethers.getSigners();
-    const CET = await ethers.getContractFactory("CET");
-    cet = await CET.connect(cetOwner).deploy("Test CET", "TCET", cetOwner.address);
+
+    const RBT = await ethers.getContractFactory("RBT");
+    const rbt = await RBT.deploy();
+    const CBT = await ethers.getContractFactory("CBT");
+    const cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
+
+    const sango = await deploySangoBy(cetOwner, {
+      rbt: rbt.address,
+      cbt: cbt.address,
+      creators: [s1.address],
+      creatorShares: [1],
+      primaries: [] as string[],
+      primaryShares: [] as number[],
+      creatorProp: 2000,
+      cetHolderProp: 2000,
+      cbtStakerProp: 2000,
+      primaryProp: 2000,
+    });
+
+    cet = await ethers.getContractAt("CET", await sango.cet());
   });
 
   describe("When CET modules are set up", async () => {

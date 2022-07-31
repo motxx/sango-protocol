@@ -136,9 +136,10 @@ describe("E2E", () => {
   let s4: SignerWithAddress;
   let s5: SignerWithAddress;
   let s6: SignerWithAddress;
+  let sOther: SignerWithAddress;
 
   beforeEach(async () => {
-    [, cbtWallet, s1, s2, s3, s4, s5, s6] = await ethers.getSigners();
+    [, cbtWallet, s1, s2, s3, s4, s5, s6, sOther] = await ethers.getSigners();
 
     const ExchangeService = await ethers.getContractFactory("ExchangeService");
     exchangeService = await ExchangeService.deploy();
@@ -233,6 +234,8 @@ describe("E2E", () => {
       });
     };
 
+    // - Setup -
+    // Create contents royalty graph.
     /**
      *     ┌─┐s5
      *  ┌──└C4──┐
@@ -242,12 +245,11 @@ describe("E2E", () => {
      *  └─►└C1◄─┘
      */
 
-    const C1 = await deploySango_(s1, [], [], [], [], 1000);
-    const C2 = await deploySango_(s2, [], [], [C1.address], [1], 1000);
-    const C3 = await deploySango_(s3, [], [], [C1.address], [1], 1000);
-    const C4 = await deploySango_(s4, [], [], [C2.address, C3.address], [1, 1], 2000);
+    const C1 = await deploySango_(sOther, [], [], [], [], 1000);
+    const C2 = await deploySango_(sOther, [], [], [C1.address], [1], 1000);
+    const C3 = await deploySango_(sOther, [], [], [C1.address], [1], 1000);
+    const C4 = await deploySango_(sOther, [], [], [C2.address, C3.address], [1, 1], 2000);
 
-    // - Setup -
     // s1 ~ s5 get 100 CBT and stake them to contents.
     const wCBT1 = await ethers.getContractAt("WrappedCBT", await C1.wrappedCBT());
     await cbt.connect(cbtWallet).transfer(s1.address, 100);
@@ -304,6 +306,105 @@ describe("E2E", () => {
     // s2 claims wCBT, but cannot get royalties.
     await wCBT2.connect(s2).claimWCBT();
     await expect(C2.releaseCBTStakerShares(s2.address)).revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'DynamicShares: account is not due payment'");
+  });
+
+  it("Should distribute royalties to CET holders of primary contents", async () => {
+    const deploySango_ = async (
+      signer: SignerWithAddress,
+      creators: string[],
+      creatorShares: number[],
+      primaries: string[],
+      primaryShares: number[],
+      primaryProp: number,
+    ) => {
+      return await deploySangoBy(signer, {
+        rbt: rbtAddress,
+        cbt: cbt.address,
+        creators,
+        creatorShares,
+        primaries,
+        primaryShares,
+        creatorProp: 0,
+        cetHolderProp: 10000 - primaryProp,
+        cbtStakerProp: 0,
+        primaryProp,
+      });
+    };
+
+    // - Setup -
+    // Create contents royalty graph.
+    /**
+     *     ┌─┐s5
+     *  ┌──└C4──┐
+     * ┌▼┐s2,3 ┌▼┐s4
+     * └C2     └C3
+     *  │  ┌─┐s1│
+     *  └─►└C1◄─┘
+     */
+
+    const C1 = await deploySango_(sOther, [], [], [], [], 1000);
+    const C2 = await deploySango_(sOther, [], [], [C1.address], [1], 1000);
+    const C3 = await deploySango_(sOther, [], [], [C1.address], [1], 1000);
+    const C4 = await deploySango_(sOther, [], [], [C2.address, C3.address], [1, 1], 2000);
+
+    // Assign mock oracles.
+    const cet1 = await ethers.getContractAt("CET", await C1.cet());
+    const cet2 = await ethers.getContractAt("CET", await C2.cet());
+    const cet3 = await ethers.getContractAt("CET", await C3.cet());
+    const cet4 = await ethers.getContractAt("CET", await C4.cet());
+
+    const ExcitingModule = await ethers.getContractFactory("ExcitingModule");
+    const em = await ExcitingModule.deploy();
+    const MockOracle = await ethers.getContractFactory("MockOracle");
+    const mo = await MockOracle.deploy();
+
+    await em.setCETOracle(cet1.address, mo.address);
+    await em.setCETOracle(cet2.address, mo.address);
+    await em.setCETOracle(cet3.address, mo.address);
+    await em.setCETOracle(cet4.address, mo.address);
+    await cet1.connect(sOther).setExcitingModules([em.address]);
+    await cet2.connect(sOther).setExcitingModules([em.address]);
+    await cet3.connect(sOther).setExcitingModules([em.address]);
+    await cet4.connect(sOther).setExcitingModules([em.address]);
+
+    // s1 ~ s5 statementOfCommit to contents.
+    await cet1.connect(s1).statementOfCommit();
+    await cet2.connect(s2).statementOfCommit();
+    await cet2.connect(s3).statementOfCommit();
+    await cet3.connect(s4).statementOfCommit();
+    await cet4.connect(s5).statementOfCommit();
+
+    await cet1.connect(s1).claimCET(s1.address);
+    /* s2 not claimed yet. */
+    await cet2.connect(s3).claimCET(s3.address);
+    await cet3.connect(s4).claimCET(s4.address);
+    await cet4.connect(s5).claimCET(s5.address);
+
+    // - Execute & Verify -
+    // Mint royalties to C4 and distribute them.
+    // Each stakers can get royalties except s2.
+    await exchangeService.mint(C4.address, 10000);
+
+    await C4.releaseCETHolderShares(s5.address);
+    expect(await rbt.balanceOf(s5.address)).to.equal(8000);
+    await C4.releasePrimaryShares(C2.address);
+    await C4.releasePrimaryShares(C3.address);
+    expect(await rbt.balanceOf(C2.address)).to.equal(1000);
+    expect(await rbt.balanceOf(C3.address)).to.equal(1000);
+    await C2.releaseCETHolderShares(s3.address);
+    await C3.releaseCETHolderShares(s4.address);
+    expect(await rbt.balanceOf(s3.address)).to.equal(900);
+    expect(await rbt.balanceOf(s4.address)).to.equal(900);
+
+    await C2.releasePrimaryShares(C1.address);
+    await C3.releasePrimaryShares(C1.address);
+    await C1.releaseCETHolderShares(s1.address);
+    expect(await rbt.balanceOf(s1.address)).to.equal(180);
+
+    // s2 claims CET, but cannot get royalties.
+    await cet2.connect(s2).claimCET(s2.address);
+    await expect(C2.releaseCETHolderShares(s2.address)).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'DynamicShares: account is not due payment'");
   });
 });

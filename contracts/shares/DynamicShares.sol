@@ -95,7 +95,9 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
     function _updatePayee(address payee, uint256 share)
         internal
     {
-        require(_isPayee[payee], "DynamicShares: payee doesn't exist");
+        require(_isPayee[payee], "DynamicShares: not added payee");
+        _totalShares -= _shares[payee];
+        _totalShares += share;
         _shares[payee] = share;
         emit UpdatePayee(payee, share);
     }
@@ -151,7 +153,8 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
         override
     {
         require(msg.sender == address(_token), "DynamicShares: must be called by pre-registered ERC20 token");
-        require(_payees.length > 0, "DynamicShares: no payees");
+        require(_payees.length > 0, "DynamicShares: no payees added");
+        require(_totalShares > 0, "DynamicShares: no payees to get shares");
         require(_token.balanceOf(address(this)) >= amount, "DynamicShares: too much amount");
 
         uint256 sumShares = 0;
