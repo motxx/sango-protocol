@@ -124,34 +124,32 @@ describe("ExchangeService", () => {
   });
 });
 
-describe("distribute on DAG", () => {
+describe("E2E", () => {
   let exchangeService: Contract;
   let rbt: Contract;
   let cbt: Contract;
   let rbtAddress: string;
+  let cbtWallet: SignerWithAddress;
+  let s1: SignerWithAddress;
+  let s2: SignerWithAddress;
+  let s3: SignerWithAddress;
+  let s4: SignerWithAddress;
+  let s5: SignerWithAddress;
+  let s6: SignerWithAddress;
 
   beforeEach(async () => {
+    [, cbtWallet, s1, s2, s3, s4, s5, s6] = await ethers.getSigners();
+
     const ExchangeService = await ethers.getContractFactory("ExchangeService");
     exchangeService = await ExchangeService.deploy();
     await exchangeService.deployed();
     rbtAddress = await exchangeService.rbt();
     rbt = await ethers.getContractAt("RBT", rbtAddress);
     const CBT = await ethers.getContractFactory("CBT");
-    cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
+    cbt = await CBT.deploy(cbtWallet.address);
   });
 
-  it("Should verify balance of the creators of primary contents", async () => {
-    /**
-     *         ┌─┐
-     *      ┌──┴C6──┐
-     *     ┌▼┐     ┌▼┐
-     *  ┌──┴C4──┬──┴C5──┐
-     * ┌▼┐     ┌▼┐     ┌▼┐
-     * └C1     └C2     └C3
-     */
-
-    const [, s1, s2, s3, s4, s5, s6] = await ethers.getSigners();
-
+  it("Should distribute royalties to creators of primary contents", async () => {
     const deploySango_ = async (
       signer: SignerWithAddress,
       creators: string[],
@@ -173,6 +171,15 @@ describe("distribute on DAG", () => {
         primaryProp,
       });
     };
+
+    /**
+     *         ┌─┐
+     *      ┌──┴C6──┐
+     *     ┌▼┐     ┌▼┐
+     *  ┌──┴C4──┬──┴C5──┐
+     * ┌▼┐     ┌▼┐     ┌▼┐
+     * └C1     └C2     └C3
+     */
 
     const C1 = await deploySango_(s1, [s1.address], [1], [], [], 0);
     const C2 = await deploySango_(s2, [s2.address], [1], [], [], 0);
@@ -201,5 +208,102 @@ describe("distribute on DAG", () => {
     expect(await rbt.balanceOf(C1.address)).to.equal(67);
     expect(await rbt.balanceOf(C2.address)).to.equal(67);
     expect(await rbt.balanceOf(C3.address)).to.equal(66);
+  });
+
+  it("Should distribute royalties to CBT stakers of primary contents", async () => {
+    const deploySango_ = async (
+      signer: SignerWithAddress,
+      creators: string[],
+      creatorShares: number[],
+      primaries: string[],
+      primaryShares: number[],
+      primaryProp: number,
+    ) => {
+      return await deploySangoBy(signer, {
+        rbt: rbtAddress,
+        cbt: cbt.address,
+        creators,
+        creatorShares,
+        primaries,
+        primaryShares,
+        creatorProp: 0,
+        cetHolderProp: 0,
+        cbtStakerProp: 10000 - primaryProp,
+        primaryProp,
+      });
+    };
+
+    /**
+     *     ┌─┐s5
+     *  ┌──└C4──┐
+     * ┌▼┐s2,3 ┌▼┐s4
+     * └C2     └C3
+     *  │  ┌─┐s1│
+     *  └─►└C1◄─┘
+     */
+
+    const C1 = await deploySango_(s1, [], [], [], [], 1000);
+    const C2 = await deploySango_(s2, [], [], [C1.address], [1], 1000);
+    const C3 = await deploySango_(s3, [], [], [C1.address], [1], 1000);
+    const C4 = await deploySango_(s4, [], [], [C2.address, C3.address], [1, 1], 2000);
+
+    // - Setup -
+    // s1 ~ s5 get 100 CBT and stake them to contents.
+    const wCBT1 = await ethers.getContractAt("WrappedCBT", await C1.wrappedCBT());
+    await cbt.connect(cbtWallet).transfer(s1.address, 100);
+    await cbt.connect(s1).approve(wCBT1.address, 100);
+    await wCBT1.connect(s1).stake(100);
+
+    const wCBT2 = await ethers.getContractAt("WrappedCBT", await C2.wrappedCBT());
+    await cbt.connect(cbtWallet).transfer(s2.address, 100);
+    await cbt.connect(s2).approve(wCBT2.address, 100);
+    await wCBT2.connect(s2).stake(100);
+    await cbt.connect(cbtWallet).transfer(s3.address, 200);
+    await cbt.connect(s3).approve(wCBT2.address, 200);
+    await wCBT2.connect(s3).stake(200);
+
+    const wCBT3 = await ethers.getContractAt("WrappedCBT", await C3.wrappedCBT());
+    await cbt.connect(cbtWallet).transfer(s4.address, 100);
+    await cbt.connect(s4).approve(wCBT3.address, 100);
+    await wCBT3.connect(s4).stake(100);
+
+    const wCBT4 = await ethers.getContractAt("WrappedCBT", await C4.wrappedCBT());
+    await cbt.connect(cbtWallet).transfer(s5.address, 100);
+    await cbt.connect(s5).approve(wCBT4.address, 100);
+    await wCBT4.connect(s5).stake(100);
+
+    // s1, s3 ~ s5 receive wCBT.
+    await wCBT1.connect(s1).receiveWCBT();
+    /* s2 not received yet */
+    await wCBT2.connect(s3).receiveWCBT();
+    await wCBT3.connect(s4).receiveWCBT();
+    await wCBT4.connect(s5).receiveWCBT();
+
+    // - Execute & Verify -
+    // Mint royalties to C4 and distribute them.
+    // Each stakers can get royalties except s2.
+    await exchangeService.mint(C4.address, 10000);
+
+    await C4.releaseCBTStakerShares(s5.address);
+    expect(await rbt.balanceOf(s5.address)).to.equal(8000);
+
+    await C4.releasePrimaryShares(C2.address);
+    await C4.releasePrimaryShares(C3.address);
+    expect(await rbt.balanceOf(C2.address)).to.equal(1000);
+    expect(await rbt.balanceOf(C3.address)).to.equal(1000);
+    await C2.releaseCBTStakerShares(s3.address);
+    await C3.releaseCBTStakerShares(s4.address);
+    expect(await rbt.balanceOf(s3.address)).to.equal(900);
+    expect(await rbt.balanceOf(s4.address)).to.equal(900);
+
+    await C2.releasePrimaryShares(C1.address);
+    await C3.releasePrimaryShares(C1.address);
+    await C1.releaseCBTStakerShares(s1.address);
+    expect(await rbt.balanceOf(s1.address)).to.equal(180);
+
+    // s2 receives wCBT, but cannot get royalties.
+    await wCBT2.connect(s2).receiveWCBT();
+    await expect(C2.releaseCBTStakerShares(s2.address)).revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'DynamicShares: account is not due payment'");
   });
 });
