@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { DynamicShares } from "./DynamicShares.sol";
@@ -8,7 +9,7 @@ import { DynamicShares } from "./DynamicShares.sol";
 /**
  * @dev Primary に RBT を分配する.
  */
-contract PrimaryShares is DynamicShares {
+contract PrimaryShares is DynamicShares, Ownable {
     using Address for address;
 
     uint32 constant public MAX_PRIMARIES = 128;

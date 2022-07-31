@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -13,9 +12,10 @@ import { ISharesReceiver } from "./ISharesReceiver.sol";
  * OpenZeppelin の PaymentSplitter を動的に payees, shares を変更可能としたもの
  * 使用する ERC20 は transfer 時に onERC20SharesReceived を呼び出す必要がある
  */
-abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
+abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
     event ResetPayees();
     event AddPayee(address payee, uint256 share);
+    event UpdatePayee(address payee, uint256 share);
     event ERC20PaymentReleased(IERC20 indexed token, address to, uint256 amount);
     event PaymentReceived(address from, uint256 amount);
 
@@ -45,7 +45,6 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
      */
     function _initPayees(address[] calldata payees, uint256[] calldata shares_)
         internal
-        onlyOwner
     {
         require(payees.length == shares_.length, "DynamicShares: mismatch length");
         require(payees.length <= _maxPayees, "DynamicShares: over than _maxPayees");
@@ -63,7 +62,6 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
      */
     function _resetPayees()
         internal
-        onlyOwner
     {
         _totalShares = 0;
         for (uint32 i = 0; i < _payees.length;) {
@@ -83,7 +81,6 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
      */
     function _addPayee(address payee, uint256 share)
         internal
-        onlyOwner
     {
         require(!_isPayee[payee], "DynamicShares: the payee already exists");
 
@@ -93,6 +90,14 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
         _totalShares += share;
 
         emit AddPayee(payee, share);
+    }
+
+    function _updatePayee(address payee, uint256 share)
+        internal
+    {
+        require(_isPayee[payee], "DynamicShares: payee doesn't exist");
+        _shares[payee] = share;
+        emit UpdatePayee(payee, share);
     }
 
     /**
@@ -166,7 +171,8 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
      */
     function supportsInterface(bytes4 interfaceId)
         public
-        pure
+        virtual
+        view
         override
         returns (bool)
     {
@@ -218,6 +224,18 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165, Ownable {
         returns (address[] memory)
     {
         return _payees;
+    }
+
+    /**
+     * @dev アカウントが分配の受領者として登録済みかの確認
+     */
+    function isPayee(address account)
+        public
+        virtual
+        view
+        returns (bool)
+    {
+        return _isPayee[account];
     }
 
     /**
