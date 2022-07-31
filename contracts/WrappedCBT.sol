@@ -2,15 +2,17 @@
 pragma solidity ^0.8.0;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
+import { ICBTStakerShares } from "./shares/ICBTStakerShares.sol";
 
 /**
  * @notice コンテンツにCBTをstakeした分と同量だけ貰える、コンテンツ毎に発行されるトークン(株式).
  * wCBT の stakeholder は、RBTの分配を受けることができる. また、コンテンツのガバナンス権を持つ場合もある.
  */
-contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
+contract WrappedCBT is ERC20, Ownable, IWrappedCBT, ReentrancyGuard {
     struct PendingReceiveStake {
         uint stakedTimestamp;
         uint256 amount;
@@ -20,6 +22,7 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
     event AcceptPayback(address account);
 
     IERC20 private _cbt;
+    ICBTStakerShares private _cbtStakerShares;
     uint256 private _minAmount;
     uint private _lockInterval;
     mapping (address => uint256) private _receivedStakeAmounts;
@@ -30,10 +33,11 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
     // ## Owner functions  ##
     // ######################
 
-    constructor(IERC20 cbt, address owner_)
+    constructor(IERC20 cbt, ICBTStakerShares cbtStakerShares, address owner_)
         ERC20("Wrapped CBT", "CBT")
     {
         _cbt = cbt;
+        _cbtStakerShares = cbtStakerShares;
         transferOwnership(owner_);
     }
 
@@ -56,7 +60,9 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
         delete _receivedStakeAmounts[account];
         delete _pendingReceiveStakes[account];
 
-        _burn(account, receivedAmount);
+        if (receivedAmount > 0) {
+            _burn(account, receivedAmount);
+        }
         _cbt.transfer(account, totalAmount);
 
         emit AcceptPayback(account);
@@ -166,5 +172,28 @@ contract WrappedCBT is ERC20, Ownable, IWrappedCBT {
         _paybackRequested[msg.sender] = true;
 
         emit RequestPayback(msg.sender);
+    }
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 /* amount */
+    )
+        internal
+        override
+        nonReentrant
+    {
+        if (from != address(0)) {
+            require (_cbtStakerShares.isPayee(from), "WrappedCBT: (BUG) 'from' having wCBT but not payee");
+            _cbtStakerShares.updatePayee(from, balanceOf(from));
+        }
+
+        if (to != address(0)) {
+            if (_cbtStakerShares.isPayee(to)) {
+                _cbtStakerShares.updatePayee(to, balanceOf(to));
+            } else {
+                _cbtStakerShares.addPayee(to, balanceOf(to));
+            }
+        }
     }
 }

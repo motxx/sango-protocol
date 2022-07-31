@@ -15,6 +15,7 @@ import { ISharesReceiver } from "./ISharesReceiver.sol";
 abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
     event ResetPayees();
     event AddPayee(address payee, uint256 share);
+    event UpdatePayee(address payee, uint256 share);
     event ERC20PaymentReleased(IERC20 indexed token, address to, uint256 amount);
     event PaymentReceived(address from, uint256 amount);
 
@@ -89,6 +90,14 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
         _totalShares += share;
 
         emit AddPayee(payee, share);
+    }
+
+    function _updatePayee(address payee, uint256 share)
+        internal
+    {
+        require(_isPayee[payee], "DynamicShares: payee doesn't exist");
+        _shares[payee] = share;
+        emit UpdatePayee(payee, share);
     }
 
     /**
@@ -215,6 +224,18 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
         returns (address[] memory)
     {
         return _payees;
+    }
+
+    /**
+     * @dev アカウントが分配の受領者として登録済みかの確認
+     */
+    function isPayee(address account)
+        public
+        virtual
+        view
+        returns (bool)
+    {
+        return _isPayee[account];
     }
 
     /**

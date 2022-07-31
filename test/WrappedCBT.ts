@@ -3,6 +3,7 @@ import { ethers } from "hardhat";
 import { solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract } from "ethers";
+import { deploySango } from "./helpers/utils";
 
 chai.use(solidity);
 
@@ -16,12 +17,27 @@ describe("Wrapped CBT", async () => {
 
   beforeEach(async () => {
     [owner, cbtWallet, s1, s2] = await ethers.getSigners();
+
+    const RBT = await ethers.getContractFactory("RBT");
+    const rbt = await RBT.deploy();
     const CBT = await ethers.getContractFactory("CBT");
     cbt = await CBT.deploy(cbtWallet.address);
     await cbt.connect(cbtWallet).approve(cbtWallet.address, 10 ** 10);
 
-    const WCBT = await ethers.getContractFactory("WrappedCBT");
-    wCBT = await WCBT.deploy(cbt.address, owner.address);
+    const sango = await deploySango({
+      rbt: rbt.address,
+      cbt: cbt.address,
+      creators: [s1.address],
+      creatorShares: [1],
+      primaries: [] as string[],
+      primaryShares: [] as number[],
+      creatorProp: 2000,
+      cetHolderProp: 2000,
+      cbtStakerProp: 2000,
+      primaryProp: 2000,
+    });
+
+    wCBT = await ethers.getContractAt("WrappedCBT", await sango.wrappedCBT());
   });
 
   it("Should stake", async () => {
