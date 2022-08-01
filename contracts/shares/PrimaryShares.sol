@@ -14,8 +14,8 @@ contract PrimaryShares is DynamicShares, Ownable {
 
     uint32 constant public MAX_PRIMARIES = 128;
 
-    constructor(IERC20 rbt)
-        DynamicShares(rbt, MAX_PRIMARIES)
+    constructor()
+        DynamicShares(MAX_PRIMARIES)
     {
     }
 
@@ -31,5 +31,25 @@ contract PrimaryShares is DynamicShares, Ownable {
             unchecked { i++; }
         }
         _initPayees(payees, shares_);
+    }
+
+    /**
+     * @notice ERC20トークンを分配で使用可能にする.
+     */
+    function approveToken(IERC20 token)
+        public
+        onlyOwner
+    {
+        _approveToken(token);
+    }
+
+    /**
+     * @notice ERC20トークンを分配で使用不可にする.
+     */
+    function disapproveToken(IERC20 token)
+        public
+        onlyOwner
+    {
+        _disapproveToken(token);
     }
 }

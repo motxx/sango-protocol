@@ -19,8 +19,8 @@ contract CBTStakerShares is ICBTStakerShares, DynamicShares, Ownable, AccessCont
     // TODO: 128でreleaseにgasが問題ないか調査.
     uint32 constant public MAX_CBT_STAKERS = 128;
 
-    constructor(IERC20 rbt)
-        DynamicShares(rbt, MAX_CBT_STAKERS)
+    constructor()
+        DynamicShares(MAX_CBT_STAKERS)
     {
     }
 
@@ -29,6 +29,26 @@ contract CBTStakerShares is ICBTStakerShares, DynamicShares, Ownable, AccessCont
         onlyOwner
     {
         _grantRole(WRAPPED_CBT_ROLE, address(wCBT));
+    }
+
+    /**
+     * @notice ERC20トークンを分配で使用可能にする.
+     */
+    function approveToken(IERC20 token)
+        public
+        onlyOwner
+    {
+        _approveToken(token);
+    }
+
+    /**
+     * @notice ERC20トークンを分配で使用不可にする.
+     */
+    function disapproveToken(IERC20 token)
+        public
+        onlyOwner
+    {
+        _disapproveToken(token);
     }
 
     function addPayee(address payee, uint256 share)

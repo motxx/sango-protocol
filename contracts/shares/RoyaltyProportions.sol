@@ -13,31 +13,28 @@ import { PrimaryShares } from "./PrimaryShares.sol";
  * @dev SangoContent に流入した RBT を Creator, CET Holder,
  * CBT Staker, Primaries に分配する. 余剰分は Treasury に蓄積される.
  */
-contract RBTProportions is DynamicShares {
+contract RoyaltyProportions is DynamicShares {
     CreatorShares private _creatorShares;
     CETHolderShares private _cetHolderShares;
     CBTStakerShares private _cbtStakerShares;
     PrimaryShares private _primaryShares;
 
-    IERC20 private _rbt;
-
     // Creators, CET Holders, CBTStakers, Primaries, Treasury
     uint32 constant public MAX_PAYEES = 5;
 
-    constructor(IERC20 rbt)
-        DynamicShares(rbt, MAX_PAYEES)
+    constructor()
+        DynamicShares(MAX_PAYEES)
     {
-        _rbt = rbt;
-        _creatorShares = new CreatorShares(_rbt);
-        _cetHolderShares = new CETHolderShares(_rbt);
-        _cbtStakerShares = new CBTStakerShares(_rbt);
-        _primaryShares = new PrimaryShares(_rbt);
+        _creatorShares = new CreatorShares();
+        _cetHolderShares = new CETHolderShares();
+        _cbtStakerShares = new CBTStakerShares();
+        _primaryShares = new PrimaryShares();
     }
 
     /**
-     * @dev RBT の分配率(ベーシスポイント)を設定する. 分配率の再設定は常に可能.
+     * @notice ロイヤリティの分配率(ベーシスポイント)を設定する. 分配率の再設定は常に可能.
      *
-     * RBTの入手方法により分配が変化する
+     * ロイヤリティの入手方法により分配が変化する
      * 1) 直接 Royalty Provider から transfer された場合
      *    この場合は、Creator / CET Holder / CBT Staker / Primaries に対して設定した比率で分配される
      *    余剰分は Treasury として SangoContent に残る.
@@ -45,7 +42,7 @@ contract RBTProportions is DynamicShares {
      * 2) TODO: Primary より CET Holder として分配された場合
      *    この場合は、Primaries を除いた Creator / CET Holder / CBT Staker に対して設定した比率が拡張され分配される
      */
-    function setRBTProportions(
+    function setRoyaltyProportions(
         uint32 creatorProp,
         uint32 cetHolderProp,
         uint32 cbtStakerProp,
@@ -53,9 +50,10 @@ contract RBTProportions is DynamicShares {
     )
         public
         virtual
+        /* onlyGovernance */
     {
         require(creatorProp + cetHolderProp + cbtStakerProp + primaryProp <= 10000,
-            "RBTProportions: sum proportions <= 10000");
+            "RoyaltyProportions: sum proportions <= 10000");
 
         _resetPayees();
         _addPayee(address(_creatorShares), creatorProp);
@@ -69,6 +67,34 @@ contract RBTProportions is DynamicShares {
             // 10000 未満の場合、余剰分が Treasury に蓄積する.
             _addPayee(address(this), treasuryProp);
         }
+    }
+
+    /**
+     * @notice ERC20トークンを分配で使用可能にする.
+     */
+    function approveToken(IERC20 token)
+        public
+        /* onlyGovernance */
+    {
+        _approveToken(token);
+        _creatorShares.approveToken(token);
+        _cetHolderShares.approveToken(token);
+        _cbtStakerShares.approveToken(token);
+        _primaryShares.approveToken(token);
+    }
+
+    /**
+     * @notice ERC20トークンを分配で使用不可にする.
+     */
+    function disapproveToken(IERC20 token)
+        public
+        /* onlyGovernance */
+    {
+        _disapproveToken(token);
+        _creatorShares.disapproveToken(token);
+        _cetHolderShares.disapproveToken(token);
+        _cbtStakerShares.disapproveToken(token);
+        _primaryShares.disapproveToken(token);
     }
 
     /**
@@ -126,40 +152,40 @@ contract RBTProportions is DynamicShares {
         return uint32(shares(address(this)));
     }
 
-    function releaseCreatorShares(address account)
+    function releaseCreatorShares(IERC20 token, address account)
         public
     {
-        if (pendingPaymentExists(address(_creatorShares))) {
-            release(address(_creatorShares));
+        if (pendingPaymentExists(token, address(_creatorShares))) {
+            release(token, address(_creatorShares));
         }
-        _creatorShares.release(account);
+        _creatorShares.release(token, account);
     }
 
-    function releaseCETHolderShares(address account)
+    function releaseCETHolderShares(IERC20 token, address account)
         public
     {
-        if (pendingPaymentExists(address(_cetHolderShares))) {
-            release(address(_cetHolderShares));
+        if (pendingPaymentExists(token, address(_cetHolderShares))) {
+            release(token, address(_cetHolderShares));
         }
-        _cetHolderShares.release(account);
+        _cetHolderShares.release(token, account);
     }
 
-    function releaseCBTStakerShares(address account)
+    function releaseCBTStakerShares(IERC20 token, address account)
         public
     {
-        if (pendingPaymentExists(address(_cbtStakerShares))) {
-            release(address(_cbtStakerShares));
+        if (pendingPaymentExists(token, address(_cbtStakerShares))) {
+            release(token, address(_cbtStakerShares));
         }
-        _cbtStakerShares.release(account);
+        _cbtStakerShares.release(token, account);
     }
 
-    function releasePrimaryShares(address account)
+    function releasePrimaryShares(IERC20 token, address account)
         public
     {
-        if (pendingPaymentExists(address(_primaryShares))) {
-            release(address(_primaryShares));
+        if (pendingPaymentExists(token, address(_primaryShares))) {
+            release(token, address(_primaryShares));
         }
-        _primaryShares.release(account);
+        _primaryShares.release(token, account);
     }
 
     /**

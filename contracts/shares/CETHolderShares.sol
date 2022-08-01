@@ -22,8 +22,8 @@ contract CETHolderShares is ICETHolderShares, DynamicShares, Ownable, AccessCont
     // TODO: 1024でreleaseにgasが問題ないか調査.
     uint32 constant public MAX_CET_HOLDERS = 1024;
 
-    constructor(IERC20 rbt)
-        DynamicShares(rbt, MAX_CET_HOLDERS)
+    constructor()
+        DynamicShares(MAX_CET_HOLDERS)
     {
     }
 
@@ -32,6 +32,26 @@ contract CETHolderShares is ICETHolderShares, DynamicShares, Ownable, AccessCont
         onlyOwner
     {
         _grantRole(CET_ROLE, address(cet));
+    }
+
+    /**
+     * @notice ERC20トークンを分配で使用可能にする.
+     */
+    function approveToken(IERC20 token)
+        public
+        onlyOwner
+    {
+        _approveToken(token);
+    }
+
+    /**
+     * @notice ERC20トークンを分配で使用不可にする.
+     */
+    function disapproveToken(IERC20 token)
+        public
+        onlyOwner
+    {
+        _disapproveToken(token);
     }
 
     function addPayee(address payee, uint256 share)

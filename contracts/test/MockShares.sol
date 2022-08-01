@@ -14,9 +14,23 @@ contract MockShares is DynamicShares, Ownable {
 
     uint32 constant public MAX_PAYEES = 100;
 
-    constructor(IERC20 rbt)
-        DynamicShares(rbt, MAX_PAYEES)
+    constructor()
+        DynamicShares(MAX_PAYEES)
     {
+    }
+
+    function approveToken(IERC20 token)
+        external
+        onlyOwner
+    {
+        _approveToken(token);
+    }
+
+    function disapproveToken(IERC20 token)
+        external
+        onlyOwner
+    {
+        _disapproveToken(token);
     }
 
     function initPayees(address[] calldata payees, uint256[] calldata shares_)

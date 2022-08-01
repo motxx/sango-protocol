@@ -19,7 +19,7 @@ describe("CETHolderShares", () => {
     const RBT = await ethers.getContractFactory("RBT");
     rbt = await RBT.deploy();
     const CETHolderShares = await ethers.getContractFactory("CETHolderShares");
-    cetShares = await CETHolderShares.deploy(rbt.address);
+    cetShares = await CETHolderShares.deploy();
     await cetShares.deployed();
   });
 
@@ -30,11 +30,9 @@ describe("CETHolderShares", () => {
     });
 
     it("Should not add SangoContract as CET Holder", async () => {
-      const SangoContent = await ethers.getContractFactory("SangoContent");
       const CBT = await ethers.getContractFactory("CBT");
       const cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
       const sango = await deploySango({
-        rbt: rbt.address,
         cbt: cbt.address,
         creators: [],
         creatorShares: [],

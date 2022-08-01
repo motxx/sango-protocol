@@ -6,15 +6,14 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ISangoContent } from "./ISangoContent.sol";
 import { CET } from "./CET.sol";
-import { RBTProportions } from "./shares/RBTProportions.sol";
+import { RoyaltyProportions } from "./shares/RoyaltyProportions.sol";
 import { ICET } from "./tokens/ICET.sol";
 import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 import { WrappedCBT } from "./WrappedCBT.sol";
 
-contract SangoContent is ISangoContent, Ownable, RBTProportions {
+contract SangoContent is ISangoContent, Ownable, RoyaltyProportions {
     // XXX: Deal with `Stack Too Deep`
     struct CtorArgs {
-        IERC20 rbt;
         IERC20 cbt;
         address[] creators;
         uint256[] creatorShares;
@@ -34,7 +33,6 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     WrappedCBT private _wrappedCBT;
 
     constructor(CtorArgs memory args)
-        RBTProportions(args.rbt)
     {
         _wrappedCBT = new WrappedCBT(args.cbt, _getCBTStakerShares(), msg.sender);
         _cet = new CET(args.cetName, args.cetSymbol, _getCETHolderShares(), msg.sender);
@@ -43,21 +41,21 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
         _getCETHolderShares().grantCETRole(_cet);
         _getCreatorShares().initPayees(args.creators, args.creatorShares);
         _getPrimaryShares().initPayees(args.primaries, args.primaryShares);
-        setRBTProportions(args.creatorProp, args.cetHolderProp, args.cbtStakerProp, args.primaryProp);
+        setRoyaltyProportions(args.creatorProp, args.cetHolderProp, args.cbtStakerProp, args.primaryProp);
     }
 
     /// @inheritdoc ISangoContent
-    function setRBTProportions(
+    function setRoyaltyProportions(
         uint32 creatorProp,
         uint32 cetHolderProp,
         uint32 cbtStakerProp,
         uint32 primaryProp
     )
         public
-        override(ISangoContent, RBTProportions)
+        override(ISangoContent, RoyaltyProportions)
         /* onlyGovernance */
     {
-        RBTProportions.setRBTProportions(
+        RoyaltyProportions.setRoyaltyProportions(
             creatorProp,
             cetHolderProp,
             cbtStakerProp,

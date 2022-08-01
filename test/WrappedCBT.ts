@@ -18,14 +18,11 @@ describe("Wrapped CBT", async () => {
   beforeEach(async () => {
     [owner, cbtWallet, s1, s2] = await ethers.getSigners();
 
-    const RBT = await ethers.getContractFactory("RBT");
-    const rbt = await RBT.deploy();
     const CBT = await ethers.getContractFactory("CBT");
     cbt = await CBT.deploy(cbtWallet.address);
     await cbt.connect(cbtWallet).approve(cbtWallet.address, 10 ** 10);
 
     const sango = await deploySango({
-      rbt: rbt.address,
       cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],

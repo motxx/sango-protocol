@@ -13,11 +13,18 @@ describe("ExchangeService", () => {
   let cbt: Contract;
   let sango1: Contract;
   let sango2: Contract;
+  let royaltyProvider: SignerWithAddress;
   let s1: SignerWithAddress;
   let s2: SignerWithAddress;
 
+  const distributeRoyalty = async (sango: Contract, amount: number) => {
+    await exchangeService.mint(royaltyProvider.address, amount);
+    await rbt.connect(royaltyProvider).approve(sango.address, amount);
+    await sango.connect(royaltyProvider).distribute(rbt.address, amount);
+  };
+
   beforeEach(async () => {
-    [, s1, s2] = await ethers.getSigners();
+    [, royaltyProvider, s1, s2] = await ethers.getSigners();
 
     const ExchangeService = await ethers.getContractFactory("ExchangeService");
     exchangeService = await ExchangeService.deploy();
@@ -28,7 +35,6 @@ describe("ExchangeService", () => {
     cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
 
     sango1 = await deploySangoBy(s1, {
-      rbt: rbtAddress,
       cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
@@ -39,10 +45,9 @@ describe("ExchangeService", () => {
       cbtStakerProp: 0,
       primaryProp: 0,
     });
-    await sango1.deployed();
+    await sango1.approveToken(rbt.address);
 
     sango2 = await deploySangoBy(s2, {
-      rbt: rbtAddress,
       cbt: cbt.address,
       creators: [s2.address],
       creatorShares: [1],
@@ -53,29 +58,29 @@ describe("ExchangeService", () => {
       cbtStakerProp: 0,
       primaryProp: 5000,
     });
-    await sango2.deployed();
+    await sango2.approveToken(rbt.address);
   });
 
   describe("mint", () => {
     it("Should mint RBT", async () => {
-      await exchangeService.mint(sango1.address, 1000);
+      await distributeRoyalty(sango1, 1000);
       expect(await exchangeService.totalSupply()).to.equal(1000);
       expect(await rbt.balanceOf(sango1.address)).to.equal(1000);
 
-      await sango1.releaseCreatorShares(s1.address);
+      await sango1.releaseCreatorShares(rbt.address, s1.address);
       expect(await rbt.balanceOf(s1.address)).to.equal(1000);
     });
 
     it("Should not mint RBT if caller is not the owner", async () => {
-      await expect(exchangeService.connect(s1).mint(sango1.address, 1000)).to.revertedWith(
+      await expect(exchangeService.connect(s1).mint(royaltyProvider.address, 1000)).to.revertedWith(
         "VM Exception while processing transaction: reverted with reason string 'Ownable: caller is not the owner'");
     });
   });
 
   describe("burn", () => {
     it("Should burn RBT", async () => {
-      await exchangeService.mint(sango1.address, 1000);
-      await sango1.releaseCreatorShares(s1.address);
+      await distributeRoyalty(sango1, 1000);
+      await sango1.releaseCreatorShares(rbt.address, s1.address);
 
       await exchangeService.connect(s1).burn(1000);
       expect(await exchangeService.totalSupply()).to.equal(0);
@@ -83,17 +88,17 @@ describe("ExchangeService", () => {
     });
 
     it("Should not burn RBT if burn amount exceeds totalSupply", async () => {
-      await exchangeService.mint(sango1.address, 1000);
-      await sango1.releaseCreatorShares(s1.address);
+      await distributeRoyalty(sango1, 1000);
+      await sango1.releaseCreatorShares(rbt.address, s1.address);
 
       await expect(exchangeService.connect(s1).burn(1100)).to.revertedWith(
         "VM Exception while processing transaction: reverted with reason string 'ExchnageService: burn amount exceeds totalSupply'");
     });
 
     it("Should not burn RBT if burn amount exceeds account balance", async () => {
-      await exchangeService.mint(sango1.address, 1000);
-      await exchangeService.mint(sango2.address, 1000);
-      await sango1.releaseCreatorShares(s1.address);
+      await distributeRoyalty(sango1, 1000);
+      await distributeRoyalty(sango2, 1000);
+      await sango1.releaseCreatorShares(rbt.address, s1.address);
 
       await expect(exchangeService.connect(s1).burn(1100)).to.revertedWith(
         "VM Exception while processing transaction: reverted with reason string 'ERC20: burn amount exceeds balance'");
@@ -102,17 +107,17 @@ describe("ExchangeService", () => {
 
   describe("totalSupply", () => {
     it("Should increase totalSupply", async () => {
-      await exchangeService.mint(sango1.address, 1000);
+      await distributeRoyalty(sango1, 1000);
       expect(await exchangeService.totalSupply()).to.equal(1000);
-      await exchangeService.mint(sango2.address, 100);
+      await distributeRoyalty(sango2, 100);
       expect(await exchangeService.totalSupply()).to.equal(1100);
     });
 
     it("Should decrease totalSupply", async () => {
-      await exchangeService.mint(sango1.address, 1000);
-      await exchangeService.mint(sango2.address, 100);
-      await sango1.releaseCreatorShares(s1.address);
-      await sango2.releaseCreatorShares(s2.address);
+      await distributeRoyalty(sango1, 1000);
+      await distributeRoyalty(sango2, 100);
+      await sango1.releaseCreatorShares(rbt.address, s1.address);
+      await sango2.releaseCreatorShares(rbt.address, s2.address);
       expect(await exchangeService.totalSupply()).to.equal(1100);
 
       await exchangeService.connect(s1).burn(100);
@@ -130,6 +135,7 @@ describe("E2E", () => {
   let cbt: Contract;
   let rbtAddress: string;
   let cbtWallet: SignerWithAddress;
+  let royaltyProvider: SignerWithAddress;
   let s1: SignerWithAddress;
   let s2: SignerWithAddress;
   let s3: SignerWithAddress;
@@ -138,8 +144,14 @@ describe("E2E", () => {
   let s6: SignerWithAddress;
   let sOther: SignerWithAddress;
 
+  const distributeRoyalty = async (sango: Contract, amount: number) => {
+    await exchangeService.mint(royaltyProvider.address, amount);
+    await rbt.connect(royaltyProvider).approve(sango.address, amount);
+    await sango.connect(royaltyProvider).distribute(rbt.address, amount);
+  };
+
   beforeEach(async () => {
-    [, cbtWallet, s1, s2, s3, s4, s5, s6, sOther] = await ethers.getSigners();
+    [, cbtWallet, royaltyProvider, s1, s2, s3, s4, s5, s6, sOther] = await ethers.getSigners();
 
     const ExchangeService = await ethers.getContractFactory("ExchangeService");
     exchangeService = await ExchangeService.deploy();
@@ -159,8 +171,7 @@ describe("E2E", () => {
       primaryShares: number[],
       primaryProp: number,
     ) => {
-      return await deploySangoBy(signer, {
-        rbt: rbtAddress,
+      const sango = await deploySangoBy(signer, {
         cbt: cbt.address,
         creators,
         creatorShares,
@@ -171,6 +182,8 @@ describe("E2E", () => {
         cbtStakerProp: 0,
         primaryProp,
       });
+      await sango.approveToken(rbt.address);
+      return sango;
     };
 
     /**
@@ -189,23 +202,23 @@ describe("E2E", () => {
     const C5 = await deploySango_(s5, [s5.address], [1], [C2.address, C3.address], [1, 2], 1000);
     const C6 = await deploySango_(s6, [s6.address], [1], [C4.address, C5.address], [1, 1], 2000);
 
-    await exchangeService.mint(C6.address, 10000);
-    await C6.releaseCreatorShares(s6.address);
+    await distributeRoyalty(C6, 10000);
+    await C6.releaseCreatorShares(rbt.address, s6.address);
     expect(await rbt.balanceOf(s6.address)).to.equal(8000);
-    await C6.releasePrimaryShares(C4.address);
-    await C6.releasePrimaryShares(C5.address);
+    await C6.releasePrimaryShares(rbt.address, C4.address);
+    await C6.releasePrimaryShares(rbt.address, C5.address);
     expect(await rbt.balanceOf(C4.address)).to.equal(1000);
     expect(await rbt.balanceOf(C5.address)).to.equal(1000);
     expect(await rbt.balanceOf(s4.address)).to.equal(0);
     expect(await rbt.balanceOf(s5.address)).to.equal(0);
-    await C4.releaseCreatorShares(s4.address);
-    await C5.releaseCreatorShares(s5.address);
+    await C4.releaseCreatorShares(rbt.address, s4.address);
+    await C5.releaseCreatorShares(rbt.address, s5.address);
     expect(await rbt.balanceOf(s4.address)).to.equal(900);
     expect(await rbt.balanceOf(s5.address)).to.equal(900);
-    await C4.releasePrimaryShares(C1.address);
-    await C4.releasePrimaryShares(C2.address);
-    await C5.releasePrimaryShares(C2.address);
-    await C5.releasePrimaryShares(C3.address);
+    await C4.releasePrimaryShares(rbt.address, C1.address);
+    await C4.releasePrimaryShares(rbt.address, C2.address);
+    await C5.releasePrimaryShares(rbt.address, C2.address);
+    await C5.releasePrimaryShares(rbt.address, C3.address);
     expect(await rbt.balanceOf(C1.address)).to.equal(67);
     expect(await rbt.balanceOf(C2.address)).to.equal(67);
     expect(await rbt.balanceOf(C3.address)).to.equal(66);
@@ -220,8 +233,7 @@ describe("E2E", () => {
       primaryShares: number[],
       primaryProp: number,
     ) => {
-      return await deploySangoBy(signer, {
-        rbt: rbtAddress,
+      const sango = await deploySangoBy(signer, {
         cbt: cbt.address,
         creators,
         creatorShares,
@@ -232,6 +244,8 @@ describe("E2E", () => {
         cbtStakerProp: 10000 - primaryProp,
         primaryProp,
       });
+      await sango.approveToken(rbt.address);
+      return sango;
     };
 
     // - Setup -
@@ -284,28 +298,28 @@ describe("E2E", () => {
     // - Execute & Verify -
     // Mint royalties to C4 and distribute them.
     // Each stakers can get royalties except s2.
-    await exchangeService.mint(C4.address, 10000);
+    await distributeRoyalty(C4, 10000);
 
-    await C4.releaseCBTStakerShares(s5.address);
+    await C4.releaseCBTStakerShares(rbt.address, s5.address);
     expect(await rbt.balanceOf(s5.address)).to.equal(8000);
 
-    await C4.releasePrimaryShares(C2.address);
-    await C4.releasePrimaryShares(C3.address);
+    await C4.releasePrimaryShares(rbt.address, C2.address);
+    await C4.releasePrimaryShares(rbt.address, C3.address);
     expect(await rbt.balanceOf(C2.address)).to.equal(1000);
     expect(await rbt.balanceOf(C3.address)).to.equal(1000);
-    await C2.releaseCBTStakerShares(s3.address);
-    await C3.releaseCBTStakerShares(s4.address);
+    await C2.releaseCBTStakerShares(rbt.address, s3.address);
+    await C3.releaseCBTStakerShares(rbt.address, s4.address);
     expect(await rbt.balanceOf(s3.address)).to.equal(900);
     expect(await rbt.balanceOf(s4.address)).to.equal(900);
 
-    await C2.releasePrimaryShares(C1.address);
-    await C3.releasePrimaryShares(C1.address);
-    await C1.releaseCBTStakerShares(s1.address);
+    await C2.releasePrimaryShares(rbt.address, C1.address);
+    await C3.releasePrimaryShares(rbt.address, C1.address);
+    await C1.releaseCBTStakerShares(rbt.address, s1.address);
     expect(await rbt.balanceOf(s1.address)).to.equal(180);
 
     // s2 claims wCBT, but cannot get royalties.
     await wCBT2.connect(s2).claimWCBT();
-    await expect(C2.releaseCBTStakerShares(s2.address)).revertedWith(
+    await expect(C2.releaseCBTStakerShares(rbt.address, s2.address)).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'DynamicShares: account is not due payment'");
   });
 
@@ -318,8 +332,7 @@ describe("E2E", () => {
       primaryShares: number[],
       primaryProp: number,
     ) => {
-      return await deploySangoBy(signer, {
-        rbt: rbtAddress,
+      const sango = await deploySangoBy(signer, {
         cbt: cbt.address,
         creators,
         creatorShares,
@@ -330,6 +343,8 @@ describe("E2E", () => {
         cbtStakerProp: 0,
         primaryProp,
       });
+      await sango.approveToken(rbt.address);
+      return sango;
     };
 
     // - Setup -
@@ -384,27 +399,27 @@ describe("E2E", () => {
     // - Execute & Verify -
     // Mint royalties to C4 and distribute them.
     // Each stakers can get royalties except s2.
-    await exchangeService.mint(C4.address, 10000);
+    await distributeRoyalty(C4, 10000);
 
-    await C4.releaseCETHolderShares(s5.address);
+    await C4.releaseCETHolderShares(rbt.address, s5.address);
     expect(await rbt.balanceOf(s5.address)).to.equal(8000);
-    await C4.releasePrimaryShares(C2.address);
-    await C4.releasePrimaryShares(C3.address);
+    await C4.releasePrimaryShares(rbt.address, C2.address);
+    await C4.releasePrimaryShares(rbt.address, C3.address);
     expect(await rbt.balanceOf(C2.address)).to.equal(1000);
     expect(await rbt.balanceOf(C3.address)).to.equal(1000);
-    await C2.releaseCETHolderShares(s3.address);
-    await C3.releaseCETHolderShares(s4.address);
+    await C2.releaseCETHolderShares(rbt.address, s3.address);
+    await C3.releaseCETHolderShares(rbt.address, s4.address);
     expect(await rbt.balanceOf(s3.address)).to.equal(900);
     expect(await rbt.balanceOf(s4.address)).to.equal(900);
 
-    await C2.releasePrimaryShares(C1.address);
-    await C3.releasePrimaryShares(C1.address);
-    await C1.releaseCETHolderShares(s1.address);
+    await C2.releasePrimaryShares(rbt.address, C1.address);
+    await C3.releasePrimaryShares(rbt.address, C1.address);
+    await C1.releaseCETHolderShares(rbt.address, s1.address);
     expect(await rbt.balanceOf(s1.address)).to.equal(180);
 
     // s2 claims CET, but cannot get royalties.
     await cet2.connect(s2).claimCET(s2.address);
-    await expect(C2.releaseCETHolderShares(s2.address)).revertedWith(
+    await expect(C2.releaseCETHolderShares(rbt.address, s2.address)).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'DynamicShares: account is not due payment'");
   });
 });
