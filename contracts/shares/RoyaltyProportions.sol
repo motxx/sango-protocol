@@ -13,7 +13,7 @@ import { PrimaryShares } from "./PrimaryShares.sol";
  * @dev SangoContent に流入した RBT を Creator, CET Holder,
  * CBT Staker, Primaries に分配する. 余剰分は Treasury に蓄積される.
  */
-contract RBTProportions is DynamicShares {
+contract RoyaltyProportions is DynamicShares {
     CreatorShares private _creatorShares;
     CETHolderShares private _cetHolderShares;
     CBTStakerShares private _cbtStakerShares;
@@ -32,9 +32,9 @@ contract RBTProportions is DynamicShares {
     }
 
     /**
-     * @dev RBT の分配率(ベーシスポイント)を設定する. 分配率の再設定は常に可能.
+     * @notice ロイヤリティの分配率(ベーシスポイント)を設定する. 分配率の再設定は常に可能.
      *
-     * RBTの入手方法により分配が変化する
+     * ロイヤリティの入手方法により分配が変化する
      * 1) 直接 Royalty Provider から transfer された場合
      *    この場合は、Creator / CET Holder / CBT Staker / Primaries に対して設定した比率で分配される
      *    余剰分は Treasury として SangoContent に残る.
@@ -42,7 +42,7 @@ contract RBTProportions is DynamicShares {
      * 2) TODO: Primary より CET Holder として分配された場合
      *    この場合は、Primaries を除いた Creator / CET Holder / CBT Staker に対して設定した比率が拡張され分配される
      */
-    function setRBTProportions(
+    function setRoyaltyProportions(
         uint32 creatorProp,
         uint32 cetHolderProp,
         uint32 cbtStakerProp,
@@ -53,7 +53,7 @@ contract RBTProportions is DynamicShares {
         /* onlyGovernance */
     {
         require(creatorProp + cetHolderProp + cbtStakerProp + primaryProp <= 10000,
-            "RBTProportions: sum proportions <= 10000");
+            "RoyaltyProportions: sum proportions <= 10000");
 
         _resetPayees();
         _addPayee(address(_creatorShares), creatorProp);

@@ -15,7 +15,7 @@ interface ISangoContent {
      * @param cbtStakerProp CBT Staker の全体の取り分
      * @param primaryProp addPrimary したコンテンツの全体の取り分
      */
-    function setRBTProportions(uint32 creatorProp, uint32 cetHolderProp, uint32 cbtStakerProp, uint32 primaryProp) external; // onlyOwner
+    function setRoyaltyProportions(uint32 creatorProp, uint32 cetHolderProp, uint32 cbtStakerProp, uint32 primaryProp) external; // onlyOwner
 
     // #############################
     // ## Contents Royalty Graph  ##
