@@ -14,7 +14,6 @@ import { WrappedCBT } from "./WrappedCBT.sol";
 contract SangoContent is ISangoContent, Ownable, RBTProportions {
     // XXX: Deal with `Stack Too Deep`
     struct CtorArgs {
-        IERC20 rbt;
         IERC20 cbt;
         address[] creators;
         uint256[] creatorShares;
@@ -34,7 +33,6 @@ contract SangoContent is ISangoContent, Ownable, RBTProportions {
     WrappedCBT private _wrappedCBT;
 
     constructor(CtorArgs memory args)
-        RBTProportions(args.rbt)
     {
         _wrappedCBT = new WrappedCBT(args.cbt, _getCBTStakerShares(), msg.sender);
         _cet = new CET(args.cetName, args.cetSymbol, _getCETHolderShares(), msg.sender);

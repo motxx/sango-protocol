@@ -3,7 +3,6 @@ import { Contract } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type SangoCtorArgs = {
-  rbt: string;
   cbt: string;
   creators: string[];
   creatorShares: number[];

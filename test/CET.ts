@@ -16,13 +16,10 @@ describe("Content Excited Token", async () => {
   beforeEach(async () => {
     [, cetOwner, excitingModule, s1] = await ethers.getSigners();
 
-    const RBT = await ethers.getContractFactory("RBT");
-    const rbt = await RBT.deploy();
     const CBT = await ethers.getContractFactory("CBT");
     const cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
 
     const sango = await deploySangoBy(cetOwner, {
-      rbt: rbt.address,
       cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
@@ -67,34 +64,26 @@ describe("Content Excited Token", async () => {
 });
 
 describe("Delegate CET mint to ExcitingModule", async () => {
-  let rbt: Contract;
   let cbt: Contract;
   let cet: Contract;
   let s1: SignerWithAddress;
   let sango: Contract;
 
-  const RBTProps = {
-    creatorProp: 2000,
-    cetHolderProp: 2000,
-    cbtStakerProp: 2000,
-    primaryProp: 2000,
-  };
-
   beforeEach(async () => {
     [, s1] = await ethers.getSigners();
 
-    const RBT = await ethers.getContractFactory("RBT");
-    rbt = await RBT.deploy();
     const CBT = await ethers.getContractFactory("CBT");
     cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
     sango = await deploySango({
-      rbt: rbt.address,
       cbt: cbt.address,
       creators: [s1.address],
       creatorShares: [1],
       primaries: [] as string[],
       primaryShares: [] as number[],
-      ...RBTProps,
+      creatorProp: 2000,
+      cetHolderProp: 2000,
+      cbtStakerProp: 2000,
+      primaryProp: 2000,
     });
     cet = await ethers.getContractAt("CET", await sango.cet());
   });

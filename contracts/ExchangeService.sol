@@ -7,7 +7,6 @@ import { IERC20 } from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { Context } from "@openzeppelin/contracts/utils/Context.sol";
 import { IExchangeService } from "./components/IExchangeService.sol";
-import { ISharesReceiver } from "./shares/ISharesReceiver.sol";
 import { IRBT } from "./tokens/IRBT.sol";
 import { RBT } from "./RBT.sol";
 
@@ -28,7 +27,6 @@ contract ExchangeService is IExchangeService, Ownable {
         override
         onlyOwner
     {
-        require(account.isContract(), "ExchangeService: account is not contract");
         _totalSupply += amount;
         _rbt.mint(account, amount);
     }

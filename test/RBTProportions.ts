@@ -9,10 +9,8 @@ describe("RBTProportions", () => {
   let rbtProp: Contract;
 
   beforeEach(async () => {
-    const RBT = await ethers.getContractFactory("RBT");
-    const rbt = await RBT.deploy();
     const RBTProportions = await ethers.getContractFactory("RBTProportions");
-    rbtProp = await RBTProportions.deploy(rbt.address);
+    rbtProp = await RBTProportions.deploy();
     await rbtProp.deployed();
   });
 

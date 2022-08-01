@@ -1,41 +1,59 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { Context } from "@openzeppelin/contracts/utils/Context.sol";
-import { ISharesReceiver } from "./ISharesReceiver.sol";
+import { IDynamicShares } from "./IDynamicShares.sol";
 
 /**
  * @dev ERC20 のトークンを指定の比率に従って各ウォレットやコントラクトに配分するクラス
  * OpenZeppelin の PaymentSplitter を動的に payees, shares を変更可能としたもの
- * 使用する ERC20 は transfer 時に onERC20SharesReceived を呼び出す必要がある
  */
-abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
+abstract contract DynamicShares is IDynamicShares, Context, IERC165, ReentrancyGuard {
+    using Address for address;
+
     event ResetPayees();
     event AddPayee(address payee, uint256 share);
     event UpdatePayee(address payee, uint256 share);
-    event ERC20PaymentReleased(IERC20 indexed token, address to, uint256 amount);
+    event Release(IERC20 indexed token, address to, uint256 amount);
+    event Distribute(IERC20 indexed token, address indexed from, uint256 amount);
     event PaymentReceived(address from, uint256 amount);
 
-    uint256 internal _totalShares;
-
-    mapping(address => uint256) private _totalReceived;
-    mapping(address => uint256) private _alreadyReleased;
+    mapping(IERC20 => bool) _approvedTokens;
+    mapping(IERC20 => mapping(address => uint256)) private _totalReceived;
+    mapping(IERC20 => mapping(address => uint256)) private _alreadyReleased;
 
     address[] internal _payees;
+    uint256 internal _totalShares;
     mapping(address => uint256) private _shares;
     mapping(address => bool) private _isPayee;
 
-    IERC20 private _token;
-
     uint32 immutable private _maxPayees;
 
-    constructor(IERC20 token, uint32 maxPayees)
+    constructor(uint32 maxPayees)
     {
-        _token = token;
         _maxPayees = maxPayees;
+    }
+
+    /**
+     * @dev 指定したトークンで分配可能にする
+     */
+    function _approveToken(IERC20 token)
+        internal
+    {
+        _approvedTokens[token] = true;
+    }
+
+    /**
+     * @dev 指定したトークンの分配を拒否する
+     */
+    function _disapproveToken(IERC20 token)
+        internal
+    {
+        _approvedTokens[token] = false;
     }
 
     /**
@@ -108,65 +126,73 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
      * contract.
      * release 対象の account に自身を指定するはことはできない. なお Treasury 用途で自身の addPayee() は可.
      */
-    function release(address account)
+    function release(IERC20 token, address account)
         public
+        nonReentrant
     {
         require(account != address(this), "DynamicShares: self payment loop");
-        uint256 payment = _totalReceived[account] - _alreadyReleased[account];
+        uint256 payment = _totalReceived[token][account] - _alreadyReleased[token][account];
         require(payment > 0, "DynamicShares: account is not due payment");
-        _alreadyReleased[account] += payment;
+        _alreadyReleased[token][account] += payment;
 
-        _token.transfer(account, payment);
-        emit ERC20PaymentReleased(_token, account, payment);
+        if (account.isContract()
+            && IERC165(account).supportsInterface(type(IDynamicShares).interfaceId)) {
+            token.approve(account, payment);
+            IDynamicShares(account).distribute(token, payment);
+        } else {
+            token.transfer(account, payment);
+        }
+
+        emit Release(token, account, payment);
     }
 
     /**
      * @dev Withdraw ERC20 token.
      */
-    function withdraw()
+    function withdraw(IERC20 token)
         external
     {
-        this.release(_msgSender());
+        this.release(token, _msgSender());
     }
 
     /**
      * @dev Check pending payments exists for specified account.
      */
-    function pendingPaymentExists(address account)
+    function pendingPaymentExists(IERC20 token, address account)
         public
         view
         returns (bool)
     {
         require(account != address(this), "DynamicShares: self payment loop");
-        uint256 payment = _totalReceived[account] - _alreadyReleased[account];
+        uint256 payment = _totalReceived[token][account] - _alreadyReleased[token][account];
         return payment > 0;
     }
 
-
     /**
-     * @dev ERC20のトークンを受け取った際の分配.
-     * 分配対象が未設定の場合、revertされる.
-     * (mintやreleaseによる、ERC20のtransferが失敗する.)
+     * @dev ERC20トークンを分配する. 分配対象が未設定の場合、revertされる.
      */
-    function onERC20SharesReceived(uint256 amount)
+    function distribute(IERC20 token, uint256 amount)
         external
         override
     {
-        require(msg.sender == address(_token), "DynamicShares: must be called by pre-registered ERC20 token");
+        require(_approvedTokens[token], "DynamicShares: not approved token");
         require(_payees.length > 0, "DynamicShares: no payees added");
         require(_totalShares > 0, "DynamicShares: no payees to get shares");
-        require(_token.balanceOf(address(this)) >= amount, "DynamicShares: too much amount");
 
         uint256 sumShares = 0;
         for (uint32 i = 0; i < _payees.length;) {
             uint256 aShare = amount * _shares[_payees[i]] / _totalShares;
-            _totalReceived[_payees[i]] += aShare;
+            _totalReceived[token][_payees[i]] += aShare;
             sumShares += aShare;
             unchecked { i++; }
         }
 
         require(amount >= sumShares, "DynamicShares: (BUG) invalid shares");
-        _totalReceived[_payees[0]] += amount - sumShares; // 最初の人が余剰分を受け取る.
+        _totalReceived[token][_payees[0]] += amount - sumShares; // 最初の人が余剰分を受け取る.
+
+        token.transferFrom(msg.sender, address(this), amount);
+
+        emit Distribute(token, msg.sender, amount);
     }
 
     /**
@@ -179,31 +205,33 @@ abstract contract DynamicShares is ISharesReceiver, Context, IERC165 {
         override
         returns (bool)
     {
-        return interfaceId == type(ISharesReceiver).interfaceId;
+        return interfaceId == type(IDynamicShares).interfaceId;
     }
 
     /**
      * @dev アカウントが受領したトークンの総量
+     * @param token ERC20 token
      * @param account The address of the account.
      */
-    function totalReceived(address account)
+    function totalReceived(IERC20 token, address account)
         public
         view
         returns (uint256)
     {
-        return _totalReceived[account];
+        return _totalReceived[token][account];
     }
 
     /**
      * @dev アカウントに放出されたトークンの総量
+     * @param token ERC20 token
      * @param account The address of the account.
      */
-    function alreadyReleased(address account)
+    function alreadyReleased(IERC20 token, address account)
         public
         view
         returns (uint256)
     {
-        return _alreadyReleased[account];
+        return _alreadyReleased[token][account];
     }
 
     /**
