@@ -53,6 +53,7 @@ contract RBTProportions is DynamicShares {
     )
         public
         virtual
+        /* onlyGovernance */
     {
         require(creatorProp + cetHolderProp + cbtStakerProp + primaryProp <= 10000,
             "RBTProportions: sum proportions <= 10000");
