@@ -235,7 +235,7 @@ abstract contract DynamicShares is IDynamicShares, Context, IERC165, ReentrancyG
     }
 
     /**
-     * @dev アカウントの現在の分配を取得
+     * @notice アカウントの現在の分配を取得. 分配率は全トークンで共通.
      * @param account The address of the account.
      */
     function shares(address account)
