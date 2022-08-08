@@ -215,13 +215,13 @@ abstract contract RoyaltyClaimRight is IRoyaltyClaimRight, ERC20, ERC20Votes, Re
         internal
         override(ERC20, ERC20Votes)
     {
-        ERC20Votes._mint(to, amount);
+        super._mint(to, amount);
     }
 
     function _burn(address account, uint256 amount)
         internal
         override(ERC20, ERC20Votes)
     {
-        ERC20Votes._burn(account, amount);
+        super._burn(account, amount);
     }
 }
