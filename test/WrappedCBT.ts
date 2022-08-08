@@ -3,35 +3,35 @@ import { ethers } from "hardhat";
 import { solidity } from "ethereum-waffle";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract } from "ethers";
-import { deploySango } from "./helpers/utils";
+import { deploySangoBy } from "./helpers/utils";
 
 chai.use(solidity);
 
 describe("Wrapped CBT", async () => {
   let cbtWallet: SignerWithAddress;
-  let owner: SignerWithAddress;
+  let contentOwner: SignerWithAddress;
   let s1: SignerWithAddress;
-  let s2: SignerWithAddress;
   let cbt: Contract;
   let wCBT: Contract;
 
   beforeEach(async () => {
-    [owner, cbtWallet, s1, s2] = await ethers.getSigners();
+    [, contentOwner, cbtWallet, s1] = await ethers.getSigners();
 
     const CBT = await ethers.getContractFactory("CBT");
     cbt = await CBT.deploy(cbtWallet.address);
     await cbt.connect(cbtWallet).approve(cbtWallet.address, 10 ** 10);
 
-    const sango = await deploySango({
+    const sango = await deploySangoBy(contentOwner, {
       cbt: cbt.address,
+      approvedTokens: ["0x0000000000000000000000000000000000012345"],
       creators: [s1.address],
       creatorShares: [1],
       primaries: [] as string[],
       primaryShares: [] as number[],
-      creatorProp: 2000,
-      cetHolderProp: 2000,
-      cbtStakerProp: 2000,
-      primaryProp: 2000,
+      creatorsAlloc: 2000,
+      cetHoldersAlloc: 2000,
+      cbtStakersAlloc: 2000,
+      primariesAlloc: 2000,
     });
 
     wCBT = await ethers.getContractAt("WrappedCBT", await sango.wrappedCBT());
@@ -58,7 +58,7 @@ describe("Wrapped CBT", async () => {
 
     // After payback, they can stake again.
     await wCBT.connect(s1).requestPayback();
-    await wCBT.acceptPayback(s1.address);
+    await wCBT.connect(contentOwner).acceptPayback(s1.address);
     await cbt.connect(s1).approve(wCBT.address, 200);
     await wCBT.connect(s1).stake(200);
     await wCBT.connect(s1).claimWCBT();
@@ -66,18 +66,18 @@ describe("Wrapped CBT", async () => {
     expect(await wCBT.balanceOf(s1.address)).equals(200);
   });
 
-  it("Should not stake if less than minAmount", async () => {
-    await wCBT.setMinAmount(200);
+  it("Should not stake if less than minStakeAmount", async () => {
+    await wCBT.connect(contentOwner).setMinStakeAmount(200);
     await cbt.connect(cbtWallet).transfer(s1.address, 1000);
     await cbt.connect(s1).approve(wCBT.address, 200);
     await expect(wCBT.connect(s1).stake(199)).revertedWith(
-      "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: less than minAmount'");
+      "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: less than minStakeAmount'");
     await wCBT.connect(s1).stake(200);
   });
 
   it("Should claimWCBT after lock interval", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 1000);
-    await wCBT.setLockInterval(100);
+    await wCBT.connect(contentOwner).setLockInterval(100);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await ethers.provider.send("evm_mine", [10000000000]);
     await wCBT.connect(s1).stake(100);
@@ -101,7 +101,7 @@ describe("Wrapped CBT", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 1000);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.connect(s1).stake(100);
-    await wCBT.setLockInterval(100); // XXX: stake後でも、wCBTの引き落とし前ならロックの効果がある
+    await wCBT.connect(contentOwner).setLockInterval(100); // XXX: stake後でも、wCBTの引き落とし前ならロックの効果がある
     await (expect(wCBT.connect(s1).claimWCBT())).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: within lock interval'");
   });
@@ -111,7 +111,7 @@ describe("Wrapped CBT", async () => {
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.connect(s1).stake(100);
     await wCBT.connect(s1).requestPayback();
-    await wCBT.acceptPayback(s1.address);
+    await wCBT.connect(contentOwner).acceptPayback(s1.address);
     expect(await cbt.balanceOf(s1.address)).equals(100);
     expect(await wCBT.balanceOf(s1.address)).equals(0);
   });
@@ -122,7 +122,7 @@ describe("Wrapped CBT", async () => {
     await wCBT.connect(s1).stake(100);
     await wCBT.connect(s1).claimWCBT();
     await wCBT.connect(s1).requestPayback();
-    await wCBT.acceptPayback(s1.address);
+    await wCBT.connect(contentOwner).acceptPayback(s1.address);
     expect(await cbt.balanceOf(s1.address)).equals(100);
     expect(await wCBT.balanceOf(s1.address)).equals(0); // wCBT should be burned in exchange for payback.
   });
@@ -133,7 +133,7 @@ describe("Wrapped CBT", async () => {
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.connect(s1).stake(100);
 
-    await expect(wCBT.acceptPayback(s1.address)).revertedWith(
+    await expect(wCBT.connect(contentOwner).acceptPayback(s1.address)).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'SangoContent: no payback request'");
   });
 
@@ -141,17 +141,17 @@ describe("Wrapped CBT", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 100);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.connect(s1).stake(100);
-    await wCBT.withdraw(s2.address, 50);
-    expect(await cbt.balanceOf(s2.address)).equals(50);
+    await wCBT.connect(contentOwner).withdraw(50);
+    expect(await cbt.balanceOf(contentOwner.address)).equals(50);
   });
 
   it("Should not payback if lack of CBT", async () => {
     await cbt.connect(cbtWallet).transfer(s1.address, 100);
     await cbt.connect(s1).approve(wCBT.address, 100);
     await wCBT.connect(s1).stake(100);
-    await wCBT.withdraw(s1.address, 50);
+    await wCBT.connect(contentOwner).withdraw(50);
     await wCBT.connect(s1).requestPayback();
-    await expect(wCBT.acceptPayback(s1.address)).revertedWith(
+    await expect(wCBT.connect(contentOwner).acceptPayback(s1.address)).revertedWith(
       "VM Exception while processing transaction: reverted with reason string 'WrappedCBT: lack of CBT balance'");
   });
 });

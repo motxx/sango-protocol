@@ -1,80 +1,160 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ISangoContent } from "./ISangoContent.sol";
 import { CET } from "./CET.sol";
-import { RoyaltyProportions } from "./shares/RoyaltyProportions.sol";
+import { WrappedCBT } from "./WrappedCBT.sol";
+import { FixedRoyaltyClaimRight } from "./claimrights/FixedRoyaltyClaimRight.sol";
+import { ManagedRoyaltyClaimRight } from "./claimrights/ManagedRoyaltyClaimRight.sol";
+import { RoyaltyClaimRight } from "./claimrights/RoyaltyClaimRight.sol";
 import { ICET } from "./tokens/ICET.sol";
 import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
-import { WrappedCBT } from "./WrappedCBT.sol";
 
-contract SangoContent is ISangoContent, Ownable, RoyaltyProportions {
-    // XXX: Deal with `Stack Too Deep`
-    struct CtorArgs {
-        IERC20 cbt;
-        address[] creators;
-        uint256[] creatorShares;
-        address[] primaries;
-        uint256[] primaryShares;
-        uint32 creatorProp;
-        uint32 cetHolderProp;
-        uint32 cbtStakerProp;
-        uint32 primaryProp;
-        string cetName;
-        string cetSymbol;
-    }
-
-    using Address for address;
-
-    CET private _cet;
+contract SangoContent is ISangoContent, RoyaltyClaimRight {
+    ManagedRoyaltyClaimRight private _creators;
     WrappedCBT private _wrappedCBT;
+    CET private _cet;
+    FixedRoyaltyClaimRight private _primaries;
+    ManagedRoyaltyClaimRight private _treasury;
 
-    constructor(CtorArgs memory args)
+    constructor(ConstructorArgs memory args)
+        RoyaltyClaimRight("Content Claim Right", "CClaimRight")
     {
-        _wrappedCBT = new WrappedCBT(args.cbt, _getCBTStakerShares(), msg.sender);
-        _cet = new CET(args.cetName, args.cetSymbol, _getCETHolderShares(), msg.sender);
+        _wrappedCBT = new WrappedCBT(
+            args.cbt,
+            args.approvedTokens,
+            msg.sender
+        );
 
-        _getCBTStakerShares().grantWrappedCBTRole(_wrappedCBT);
-        _getCETHolderShares().grantCETRole(_cet);
-        _getCreatorShares().initPayees(args.creators, args.creatorShares);
-        _getPrimaryShares().initPayees(args.primaries, args.primaryShares);
-        setRoyaltyProportions(args.creatorProp, args.cetHolderProp, args.cbtStakerProp, args.primaryProp);
+        _cet = new CET(
+            args.cetName,
+            args.cetSymbol,
+            args.approvedTokens,
+            msg.sender
+        );
+
+        _creators = new ManagedRoyaltyClaimRight(
+            "Creators Claim Right",
+            "CRClaimRight",
+            args.approvedTokens
+        );
+        _creators.batchMint(args.creators, args.creatorShares);
+        _creators.transferOwnership(msg.sender);
+
+        _primaries = new FixedRoyaltyClaimRight(
+            "Primaries Claim Right",
+            "PRClaimRight",
+            args.primaries,
+            args.primaryShares,
+            args.approvedTokens
+        );
+
+        _treasury = new ManagedRoyaltyClaimRight(
+            "Treasury Claim Right",
+            "TRClaimRight",
+            args.approvedTokens
+        );
+
+        _approveForIncomingTokens(args.approvedTokens);
+        setRoyaltyAllocation(args.creatorsAlloc, args.cbtStakersAlloc, args.cetHoldersAlloc, args.primariesAlloc);
     }
+
+    // #############################
+    // ## Governance functions    ##
+    // #############################
 
     /// @inheritdoc ISangoContent
-    function setRoyaltyProportions(
-        uint32 creatorProp,
-        uint32 cetHolderProp,
-        uint32 cbtStakerProp,
-        uint32 primaryProp
+    function setRoyaltyAllocation(
+        uint32 creatorsAlloc,
+        uint32 cbtStakersAlloc,
+        uint32 cetHoldersAlloc,
+        uint32 primariesAlloc
     )
         public
-        override(ISangoContent, RoyaltyProportions)
+        override
         /* onlyGovernance */
     {
-        RoyaltyProportions.setRoyaltyProportions(
-            creatorProp,
-            cetHolderProp,
-            cbtStakerProp,
-            primaryProp
+        require (creatorsAlloc <= 10000 && cbtStakersAlloc <= 10000
+            && cetHoldersAlloc <= 10000 && primariesAlloc <= 10000,
+            "SangoContent: each alloc <= 10000"
         );
+        uint32 mainAllocSum = creatorsAlloc + cbtStakersAlloc + cetHoldersAlloc + primariesAlloc;
+        require (mainAllocSum <= 10000, "RoyaltyProportions: alloc sum <= 10000");
+
+        _setAllocation(address(_creators), creatorsAlloc);
+        _setAllocation(address(_wrappedCBT), cbtStakersAlloc);
+        _setAllocation(address(_cet), cetHoldersAlloc);
+        _setAllocation(address(_primaries), primariesAlloc);
+
+        uint32 treasuryAlloc = 10000 - mainAllocSum;
+        _setAllocation(address(_treasury), treasuryAlloc);
+
+        emit SetRoyaltyAllocation(creatorsAlloc, cbtStakersAlloc, cetHoldersAlloc, primariesAlloc, treasuryAlloc);
+    }
+
+    /**
+     * @dev Approve `token` to distribute to royalty receivers.
+     * TODO: onlyOwner vs onlyGovernance
+     */
+    function setApprovalForIncomingToken(IERC20 token, bool approved)
+        external
+        /* onlyGovernance */
+    {
+        _setApprovalForIncomingToken(token, approved);
+        _creators.setApprovalForIncomingToken(token, approved);
+        _wrappedCBT.setApprovalForIncomingToken(token, approved);
+        _cet.setApprovalForIncomingToken(token, approved);
+        // _primaries.setApprovalForIncomingToken(token, approved); // TODO: Primary に支払う token は後決め可能か?
+        _treasury.setApprovalForIncomingToken(token, approved);
     }
 
     // #############################
-    // ## Contents Royalty Graph  ##
+    // ## Public functions        ##
     // #############################
 
     /// @inheritdoc ISangoContent
-    function getPrimaries()
+    function creators()
         public
         view
         override
-        returns (address[] memory)
+        returns (ManagedRoyaltyClaimRight)
     {
-        return _getPrimaryShares().allPayees();
+        return _creators;
+    }
+
+    /// @inheritdoc ISangoContent
+    function primaries()
+        public
+        view
+        override
+        returns (FixedRoyaltyClaimRight)
+    {
+        return _primaries;
+    }
+
+    /// @inheritdoc ISangoContent
+    function treasury()
+        public
+        view
+        override
+        returns (ManagedRoyaltyClaimRight)
+    {
+        return _treasury;
+    }
+
+    /// @inheritdoc ISangoContent
+    function forceClaimAll(IERC20 token)
+        external
+        override
+    {
+        claimAll(address(_creators), token);
+        claimAll(address(_wrappedCBT), token);
+        claimAll(address(_cet), token);
+        claimAll(address(_primaries), token);
+        claimAll(address(_treasury), token);
+
+        emit ForceClaimAll(token);
     }
 
     // #############################
@@ -103,5 +183,31 @@ contract SangoContent is ISangoContent, Ownable, RoyaltyProportions {
         returns (ICET)
     {
         return _cet;
+    }
+
+    // #############################
+    // ## Internal functions      ##
+    // #############################
+
+    /**
+     * @dev Not transferable token because only owner can change allocation.
+     */
+    function _beforeTokenTransfer(address from, address to, uint256 /* amount */)
+        internal
+        pure
+        override
+    {
+        require (from == address(0) || to == address(0), "SangoContent: not transferable");
+    }
+
+    /**
+     * @dev Set `amount` as the allocation for `account`.
+     */
+    function _setAllocation(address account, uint32 amount)
+        internal
+    {
+        require (amount <= 10000, "SangoContent: alloc <= 10000");
+        _burn(account, balanceOf(account));
+        _mint(account, amount);
     }
 }

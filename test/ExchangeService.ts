@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { solidity } from "ethereum-waffle";
 import { Contract } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { deploySangoBy } from "./helpers/utils";
+import { deploySangoBy, getCreators, getPrimaries, getWrappedCBT, getCET } from "./helpers/utils";
 
 chai.use(solidity);
 
@@ -36,29 +36,29 @@ describe("ExchangeService", () => {
 
     sango1 = await deploySangoBy(s1, {
       cbt: cbt.address,
+      approvedTokens: [rbt.address],
       creators: [s1.address],
       creatorShares: [1],
       primaries: [] as string[],
       primaryShares: [] as number[],
-      creatorProp: 10000,
-      cetHolderProp: 0,
-      cbtStakerProp: 0,
-      primaryProp: 0,
+      creatorsAlloc: 10000,
+      cetHoldersAlloc: 0,
+      cbtStakersAlloc: 0,
+      primariesAlloc: 0,
     });
-    await sango1.approveToken(rbt.address);
 
     sango2 = await deploySangoBy(s2, {
       cbt: cbt.address,
+      approvedTokens: [rbt.address],
       creators: [s2.address],
       creatorShares: [1],
       primaries: [sango1.address],
       primaryShares: [1],
-      creatorProp: 5000,
-      cetHolderProp: 0,
-      cbtStakerProp: 0,
-      primaryProp: 5000,
+      creatorsAlloc: 5000,
+      cetHoldersAlloc: 0,
+      cbtStakersAlloc: 0,
+      primariesAlloc: 5000,
     });
-    await sango2.approveToken(rbt.address);
   });
 
   describe("mint", () => {
@@ -67,7 +67,9 @@ describe("ExchangeService", () => {
       expect(await exchangeService.totalSupply()).to.equal(1000);
       expect(await rbt.balanceOf(sango1.address)).to.equal(1000);
 
-      await sango1.releaseCreatorShares(rbt.address, s1.address);
+      await sango1.forceClaimAll(rbt.address);
+      await (await (getCreators(sango1))).claimNext(s1.address, rbt.address);
+
       expect(await rbt.balanceOf(s1.address)).to.equal(1000);
     });
 
@@ -80,7 +82,9 @@ describe("ExchangeService", () => {
   describe("burn", () => {
     it("Should burn RBT", async () => {
       await distributeRoyalty(sango1, 1000);
-      await sango1.releaseCreatorShares(rbt.address, s1.address);
+      await sango1.forceClaimAll(rbt.address);
+      const creators = await getCreators(sango1);
+      await creators.claimNext(s1.address, rbt.address);
 
       await exchangeService.connect(s1).burn(1000);
       expect(await exchangeService.totalSupply()).to.equal(0);
@@ -89,7 +93,9 @@ describe("ExchangeService", () => {
 
     it("Should not burn RBT if burn amount exceeds totalSupply", async () => {
       await distributeRoyalty(sango1, 1000);
-      await sango1.releaseCreatorShares(rbt.address, s1.address);
+      await sango1.forceClaimAll(rbt.address);
+      const creators = await getCreators(sango1);
+      await creators.claimNext(s1.address, rbt.address);
 
       await expect(exchangeService.connect(s1).burn(1100)).to.revertedWith(
         "VM Exception while processing transaction: reverted with reason string 'ExchnageService: burn amount exceeds totalSupply'");
@@ -97,8 +103,13 @@ describe("ExchangeService", () => {
 
     it("Should not burn RBT if burn amount exceeds account balance", async () => {
       await distributeRoyalty(sango1, 1000);
+      await sango1.forceClaimAll(rbt.address);
+      await (await (getCreators(sango1))).claimNext(s1.address, rbt.address);
+
       await distributeRoyalty(sango2, 1000);
-      await sango1.releaseCreatorShares(rbt.address, s1.address);
+      await sango2.forceClaimAll(rbt.address);
+      const sango2Creators = await getCreators(sango2);
+      await sango2Creators.claimNext(s2.address, rbt.address);
 
       await expect(exchangeService.connect(s1).burn(1100)).to.revertedWith(
         "VM Exception while processing transaction: reverted with reason string 'ERC20: burn amount exceeds balance'");
@@ -109,15 +120,20 @@ describe("ExchangeService", () => {
     it("Should increase totalSupply", async () => {
       await distributeRoyalty(sango1, 1000);
       expect(await exchangeService.totalSupply()).to.equal(1000);
+
       await distributeRoyalty(sango2, 100);
       expect(await exchangeService.totalSupply()).to.equal(1100);
     });
 
     it("Should decrease totalSupply", async () => {
       await distributeRoyalty(sango1, 1000);
+      await sango1.forceClaimAll(rbt.address);
+      await (await (getCreators(sango1))).claimNext(s1.address, rbt.address);
+
       await distributeRoyalty(sango2, 100);
-      await sango1.releaseCreatorShares(rbt.address, s1.address);
-      await sango2.releaseCreatorShares(rbt.address, s2.address);
+      await sango2.forceClaimAll(rbt.address);
+      await (await (getCreators(sango2))).claimNext(s2.address, rbt.address);
+
       expect(await exchangeService.totalSupply()).to.equal(1100);
 
       await exchangeService.connect(s1).burn(100);
@@ -169,20 +185,20 @@ describe("E2E", () => {
       creatorShares: number[],
       primaries: string[],
       primaryShares: number[],
-      primaryProp: number,
+      primariesAlloc: number,
     ) => {
       const sango = await deploySangoBy(signer, {
         cbt: cbt.address,
+        approvedTokens: [rbt.address],
         creators,
         creatorShares,
         primaries,
         primaryShares,
-        creatorProp: 10000 - primaryProp,
-        cetHolderProp: 0,
-        cbtStakerProp: 0,
-        primaryProp,
+        creatorsAlloc: 10000 - primariesAlloc,
+        cetHoldersAlloc: 0,
+        cbtStakersAlloc: 0,
+        primariesAlloc,
       });
-      await sango.approveToken(rbt.address);
       return sango;
     };
 
@@ -203,25 +219,35 @@ describe("E2E", () => {
     const C6 = await deploySango_(s6, [s6.address], [1], [C4.address, C5.address], [1, 1], 2000);
 
     await distributeRoyalty(C6, 10000);
-    await C6.releaseCreatorShares(rbt.address, s6.address);
+    await C6.forceClaimAll(rbt.address);
+    await (await getCreators(C6)).claimNext(s6.address, rbt.address);
     expect(await rbt.balanceOf(s6.address)).to.equal(8000);
-    await C6.releasePrimaryShares(rbt.address, C4.address);
-    await C6.releasePrimaryShares(rbt.address, C5.address);
+    await (await getPrimaries(C6)).claimNext(C4.address, rbt.address);
+    await (await getPrimaries(C6)).claimNext(C5.address, rbt.address);
     expect(await rbt.balanceOf(C4.address)).to.equal(1000);
     expect(await rbt.balanceOf(C5.address)).to.equal(1000);
-    expect(await rbt.balanceOf(s4.address)).to.equal(0);
-    expect(await rbt.balanceOf(s5.address)).to.equal(0);
-    await C4.releaseCreatorShares(rbt.address, s4.address);
-    await C5.releaseCreatorShares(rbt.address, s5.address);
+    await C4.forceClaimAll(rbt.address);
+    await C5.forceClaimAll(rbt.address);
+    await (await getCreators(C4)).claimNext(s4.address, rbt.address);
+    await (await getCreators(C5)).claimNext(s5.address, rbt.address);
     expect(await rbt.balanceOf(s4.address)).to.equal(900);
     expect(await rbt.balanceOf(s5.address)).to.equal(900);
-    await C4.releasePrimaryShares(rbt.address, C1.address);
-    await C4.releasePrimaryShares(rbt.address, C2.address);
-    await C5.releasePrimaryShares(rbt.address, C2.address);
-    await C5.releasePrimaryShares(rbt.address, C3.address);
-    expect(await rbt.balanceOf(C1.address)).to.equal(67);
-    expect(await rbt.balanceOf(C2.address)).to.equal(67);
+    await (await getPrimaries(C4)).claimNext(C1.address, rbt.address);
+    await (await getPrimaries(C4)).claimNext(C2.address, rbt.address);
+    await (await getPrimaries(C5)).claimNext(C2.address, rbt.address);
+    await (await getPrimaries(C5)).claimNext(C3.address, rbt.address);
+    expect(await rbt.balanceOf(C1.address)).to.equal(66);
+    expect(await rbt.balanceOf(C2.address)).to.equal(66);
     expect(await rbt.balanceOf(C3.address)).to.equal(66);
+    await C1.forceClaimAll(rbt.address);
+    await C2.forceClaimAll(rbt.address);
+    await C3.forceClaimAll(rbt.address);
+    await (await getCreators(C1)).claimNext(s1.address, rbt.address);
+    await (await getCreators(C2)).claimNext(s2.address, rbt.address);
+    await (await getCreators(C3)).claimNext(s3.address, rbt.address);
+    expect(await rbt.balanceOf(s1.address)).to.equal(66);
+    expect(await rbt.balanceOf(s2.address)).to.equal(66);
+    expect(await rbt.balanceOf(s3.address)).to.equal(66);
   });
 
   it("Should distribute royalties to CBT stakers of primary contents", async () => {
@@ -231,20 +257,20 @@ describe("E2E", () => {
       creatorShares: number[],
       primaries: string[],
       primaryShares: number[],
-      primaryProp: number,
+      primariesAlloc: number,
     ) => {
       const sango = await deploySangoBy(signer, {
         cbt: cbt.address,
+        approvedTokens: [rbt.address],
         creators,
         creatorShares,
         primaries,
         primaryShares,
-        creatorProp: 0,
-        cetHolderProp: 0,
-        cbtStakerProp: 10000 - primaryProp,
-        primaryProp,
+        creatorsAlloc: 0,
+        cetHoldersAlloc: 0,
+        cbtStakersAlloc: 10000 - primariesAlloc,
+        primariesAlloc,
       });
-      await sango.approveToken(rbt.address);
       return sango;
     };
 
@@ -300,27 +326,35 @@ describe("E2E", () => {
     // Each stakers can get royalties except s2.
     await distributeRoyalty(C4, 10000);
 
-    await C4.releaseCBTStakerShares(rbt.address, s5.address);
+    await C4.forceClaimAll(rbt.address);
+    await (await getWrappedCBT(C4)).claimNext(s5.address, rbt.address);
     expect(await rbt.balanceOf(s5.address)).to.equal(8000);
 
-    await C4.releasePrimaryShares(rbt.address, C2.address);
-    await C4.releasePrimaryShares(rbt.address, C3.address);
+    await (await getPrimaries(C4)).claimNext(C2.address, rbt.address);
+    await (await getPrimaries(C4)).claimNext(C3.address, rbt.address);
     expect(await rbt.balanceOf(C2.address)).to.equal(1000);
     expect(await rbt.balanceOf(C3.address)).to.equal(1000);
-    await C2.releaseCBTStakerShares(rbt.address, s3.address);
-    await C3.releaseCBTStakerShares(rbt.address, s4.address);
+
+    await C2.forceClaimAll(rbt.address);
+    await C3.forceClaimAll(rbt.address);
+    await (await getWrappedCBT(C2)).claimNext(s3.address, rbt.address);
+    await (await getWrappedCBT(C3)).claimNext(s4.address, rbt.address);
     expect(await rbt.balanceOf(s3.address)).to.equal(900);
     expect(await rbt.balanceOf(s4.address)).to.equal(900);
 
-    await C2.releasePrimaryShares(rbt.address, C1.address);
-    await C3.releasePrimaryShares(rbt.address, C1.address);
-    await C1.releaseCBTStakerShares(rbt.address, s1.address);
+    await (await getPrimaries(C2)).claimNext(C1.address, rbt.address);
+    await (await getPrimaries(C3)).claimNext(C1.address, rbt.address);
+    await C1.forceClaimAll(rbt.address);
+    await (await getWrappedCBT(C1)).claimNext(s1.address, rbt.address);
     expect(await rbt.balanceOf(s1.address)).to.equal(180);
 
-    // s2 claims wCBT, but cannot get royalties.
+    // s2 claims wCBT after distribution, but cannot get royalties.
     await wCBT2.connect(s2).claimWCBT();
-    await expect(C2.releaseCBTStakerShares(rbt.address, s2.address)).revertedWith(
-      "VM Exception while processing transaction: reverted with reason string 'DynamicShares: account is not due payment'");
+    await (await getWrappedCBT(C2)).claimNext(s2.address, rbt.address);
+
+    expect(await rbt.balanceOf(s2.address)).to.equal(0);
+    await expect((await getWrappedCBT(C2)).claimNext(s2.address, rbt.address)).revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'RoyaltyClaimRight: no more incoming amount exists'");
   });
 
   it("Should distribute royalties to CET holders of primary contents", async () => {
@@ -330,20 +364,20 @@ describe("E2E", () => {
       creatorShares: number[],
       primaries: string[],
       primaryShares: number[],
-      primaryProp: number,
+      primariesAlloc: number,
     ) => {
       const sango = await deploySangoBy(signer, {
         cbt: cbt.address,
+        approvedTokens: [rbt.address],
         creators,
         creatorShares,
         primaries,
         primaryShares,
-        creatorProp: 0,
-        cetHolderProp: 10000 - primaryProp,
-        cbtStakerProp: 0,
-        primaryProp,
+        creatorsAlloc: 0,
+        cetHoldersAlloc: 10000 - primariesAlloc,
+        cbtStakersAlloc: 0,
+        primariesAlloc,
       });
-      await sango.approveToken(rbt.address);
       return sango;
     };
 
@@ -401,25 +435,33 @@ describe("E2E", () => {
     // Each stakers can get royalties except s2.
     await distributeRoyalty(C4, 10000);
 
-    await C4.releaseCETHolderShares(rbt.address, s5.address);
+    await C4.forceClaimAll(rbt.address);
+    await (await getCET(C4)).claimNext(s5.address, rbt.address);
     expect(await rbt.balanceOf(s5.address)).to.equal(8000);
-    await C4.releasePrimaryShares(rbt.address, C2.address);
-    await C4.releasePrimaryShares(rbt.address, C3.address);
+    await (await getPrimaries(C4)).claimNext(C2.address, rbt.address);
+    await (await getPrimaries(C4)).claimNext(C3.address, rbt.address);
     expect(await rbt.balanceOf(C2.address)).to.equal(1000);
     expect(await rbt.balanceOf(C3.address)).to.equal(1000);
-    await C2.releaseCETHolderShares(rbt.address, s3.address);
-    await C3.releaseCETHolderShares(rbt.address, s4.address);
+
+    await C2.forceClaimAll(rbt.address);
+    await C3.forceClaimAll(rbt.address);
+    await (await getCET(C2)).claimNext(s3.address, rbt.address);
+    await (await getCET(C3)).claimNext(s4.address, rbt.address);
     expect(await rbt.balanceOf(s3.address)).to.equal(900);
     expect(await rbt.balanceOf(s4.address)).to.equal(900);
 
-    await C2.releasePrimaryShares(rbt.address, C1.address);
-    await C3.releasePrimaryShares(rbt.address, C1.address);
-    await C1.releaseCETHolderShares(rbt.address, s1.address);
+    await (await getPrimaries(C2)).claimNext(C1.address, rbt.address);
+    await (await getPrimaries(C3)).claimNext(C1.address, rbt.address);
+    await C1.forceClaimAll(rbt.address);
+    await (await getCET(C1)).claimNext(s1.address, rbt.address);
     expect(await rbt.balanceOf(s1.address)).to.equal(180);
 
-    // s2 claims CET, but cannot get royalties.
+    // s2 claims CET after distribution, but cannot get royalties.
     await cet2.connect(s2).claimCET(s2.address);
-    await expect(C2.releaseCETHolderShares(rbt.address, s2.address)).revertedWith(
-      "VM Exception while processing transaction: reverted with reason string 'DynamicShares: account is not due payment'");
+    await (await getCET(C2)).claimNext(s2.address, rbt.address);
+
+    expect(await rbt.balanceOf(s2.address)).to.equal(0);
+    await expect((await getCET(C2)).claimNext(s2.address, rbt.address)).revertedWith(
+      "VM Exception while processing transaction: reverted with reason string 'RoyaltyClaimRight: no more incoming amount exists'");
   });
 });
