@@ -21,14 +21,15 @@ describe("Content Excited Token", async () => {
 
     const sango = await deploySangoBy(cetOwner, {
       cbt: cbt.address,
+      approvedTokens: ["0x0000000000000000000000000000000000012345"],
       creators: [s1.address],
       creatorShares: [1],
       primaries: [] as string[],
       primaryShares: [] as number[],
-      creatorProp: 2000,
-      cetHolderProp: 2000,
-      cbtStakerProp: 2000,
-      primaryProp: 2000,
+      creatorsAlloc: 2000,
+      cetHoldersAlloc: 2000,
+      cbtStakersAlloc: 2000,
+      primariesAlloc: 2000,
     });
 
     cet = await ethers.getContractAt("CET", await sango.cet());
@@ -51,7 +52,6 @@ describe("Content Excited Token", async () => {
       expect(await cet.balanceOf(s1.address)).equals(1);
       expect(await cet.holdingAmount(s1.address)).equals(1000);
     });
-
     /*
     it("Should claimCET", async () => {
       await cet.connect(s1).statementOfCommit();
@@ -76,14 +76,15 @@ describe("Delegate CET mint to ExcitingModule", async () => {
     cbt = await CBT.deploy("0x0000000000000000000000000000000000000001");
     sango = await deploySango({
       cbt: cbt.address,
+      approvedTokens: ["0x0000000000000000000000000000000000012345"],
       creators: [s1.address],
       creatorShares: [1],
       primaries: [] as string[],
       primaryShares: [] as number[],
-      creatorProp: 2000,
-      cetHolderProp: 2000,
-      cbtStakerProp: 2000,
-      primaryProp: 2000,
+      creatorsAlloc: 2000,
+      cetHoldersAlloc: 2000,
+      cbtStakersAlloc: 2000,
+      primariesAlloc: 2000,
     });
     cet = await ethers.getContractAt("CET", await sango.cet());
   });

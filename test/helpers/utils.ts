@@ -4,14 +4,15 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 export type SangoCtorArgs = {
   cbt: string;
+  approvedTokens: string[];
   creators: string[];
   creatorShares: number[];
   primaries: string[];
   primaryShares: number[];
-  creatorProp: number;
-  cetHolderProp: number;
-  cbtStakerProp: number;
-  primaryProp: number;
+  creatorsAlloc: number;
+  cetHoldersAlloc: number;
+  cbtStakersAlloc: number;
+  primariesAlloc: number;
   cetName?: string;
   cetSymbol?: string;
 };
@@ -34,4 +35,29 @@ export const deploySangoBy = async (deployer: SignerWithAddress, args: SangoCtor
   const sango = await SangoContent.connect(deployer).deploy(args);
   await sango.deployed();
   return sango;
+};
+
+export const getCreators = async (sango: Contract) => {
+  const instance = await sango.creators();
+  return await ethers.getContractAt("ManagedRoyaltyClaimRight", instance);
+};
+
+export const getPrimaries = async (sango: Contract) => {
+  const instance = await sango.primaries();
+  return await ethers.getContractAt("FixedRoyaltyClaimRight", instance);
+};
+
+export const getWrappedCBT = async (sango: Contract) => {
+  const instance = await sango.wrappedCBT();
+  return await ethers.getContractAt("WrappedCBT", instance);
+};
+
+export const getCET = async (sango: Contract) => {
+  const instance = await sango.cet();
+  return await ethers.getContractAt("CET", instance);
+};
+
+export const getTreasury = async (sango: Contract) => {
+  const instance = await sango.treasury();
+  return await ethers.getContractAt("ManagedRoyaltyClaimRight", instance);
 };
