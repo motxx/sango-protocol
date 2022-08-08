@@ -90,6 +90,32 @@ describe("RoyaltyClaimRight - Distributions", async () => {
       expect(await erc20.balanceOf(s1.address)).equals(1);
     });
 
+    it("Should get past royalties distribution", async () => {
+      // Change allocation -> [1, 1]
+      await claimRight.mint(s1.address, 1);
+      await claimRight.mint(s2.address, 1);
+      // Distribute 2 tokens -> [1, 1]
+      await erc20.approve(claimRight.address, 2);
+      await claimRight.distribute(erc20.address, 2);
+
+      // Change allocation -> [2, 1]
+      await claimRight.mint(s1.address, 1);
+      // Distribute 3 tokens -> [2, 1]
+      await erc20.approve(claimRight.address, 3);
+      await claimRight.distribute(erc20.address, 3);
+
+      // Execute claimNext and verify balances.
+      await claimRight.claimNext(s1.address, erc20.address);
+      expect(await erc20.balanceOf(s1.address)).equals(1);
+      await claimRight.claimNext(s1.address, erc20.address);
+      expect(await erc20.balanceOf(s1.address)).equals(3);
+
+      await claimRight.claimNext(s2.address, erc20.address);
+      expect(await erc20.balanceOf(s2.address)).equals(1);
+      await claimRight.claimNext(s2.address, erc20.address);
+      expect(await erc20.balanceOf(s2.address)).equals(2);
+    });
+
     it("Should not get royalty if no distribution", async () => {
       await claimRight.mint(s1.address, 1);
       await expect(claimRight.claimNext(s1.address, erc20.address)).revertedWith(
