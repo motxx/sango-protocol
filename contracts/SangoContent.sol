@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISangoContent } from "./ISangoContent.sol";
 import { CET } from "./CET.sol";
@@ -8,15 +9,20 @@ import { WrappedCBT } from "./WrappedCBT.sol";
 import { FixedRoyaltyClaimRight } from "./claimrights/FixedRoyaltyClaimRight.sol";
 import { ManagedRoyaltyClaimRight } from "./claimrights/ManagedRoyaltyClaimRight.sol";
 import { RoyaltyClaimRight } from "./claimrights/RoyaltyClaimRight.sol";
+import { SangoGovernor } from "./governance/SangoGovernor.sol";
 import { ICET } from "./tokens/ICET.sol";
 import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 
-contract SangoContent is ISangoContent, RoyaltyClaimRight {
+contract SangoContent is ISangoContent, RoyaltyClaimRight, AccessControl {
     ManagedRoyaltyClaimRight private _creators;
     WrappedCBT private _wrappedCBT;
     CET private _cet;
     FixedRoyaltyClaimRight private _primaries;
     ManagedRoyaltyClaimRight private _treasury;
+
+    SangoGovernor private _governor;
+
+    bytes32 constant public SANGO_GOVERNER_ROLE = keccak256("SANGO_GOVERNER_ROLE");
 
     constructor(ConstructorArgs memory args)
         RoyaltyClaimRight("Content Claim Right", "CClaimRight")
@@ -57,7 +63,10 @@ contract SangoContent is ISangoContent, RoyaltyClaimRight {
         );
 
         _approveForIncomingTokens(args.approvedTokens);
-        setRoyaltyAllocation(args.creatorsAlloc, args.cbtStakersAlloc, args.cetHoldersAlloc, args.primariesAlloc);
+        _setRoyaltyAllocation(args.creatorsAlloc, args.cbtStakersAlloc, args.cetHoldersAlloc, args.primariesAlloc);
+
+        _governor = new SangoGovernor(_wrappedCBT, this);
+        _grantRole(SANGO_GOVERNER_ROLE, address(_governor));
     }
 
     // #############################
@@ -73,33 +82,16 @@ contract SangoContent is ISangoContent, RoyaltyClaimRight {
     )
         public
         override
-        /* onlyGovernance */
+        onlyRole(SANGO_GOVERNER_ROLE)
     {
-        require (creatorsAlloc <= 10000 && cbtStakersAlloc <= 10000
-            && cetHoldersAlloc <= 10000 && primariesAlloc <= 10000,
-            "SangoContent: each alloc <= 10000"
-        );
-        uint32 mainAllocSum = creatorsAlloc + cbtStakersAlloc + cetHoldersAlloc + primariesAlloc;
-        require (mainAllocSum <= 10000, "RoyaltyProportions: alloc sum <= 10000");
-
-        _setAllocation(address(_creators), creatorsAlloc);
-        _setAllocation(address(_wrappedCBT), cbtStakersAlloc);
-        _setAllocation(address(_cet), cetHoldersAlloc);
-        _setAllocation(address(_primaries), primariesAlloc);
-
-        uint32 treasuryAlloc = 10000 - mainAllocSum;
-        _setAllocation(address(_treasury), treasuryAlloc);
-
-        emit SetRoyaltyAllocation(creatorsAlloc, cbtStakersAlloc, cetHoldersAlloc, primariesAlloc, treasuryAlloc);
+        _setRoyaltyAllocation(creatorsAlloc, cbtStakersAlloc, cetHoldersAlloc, primariesAlloc);
     }
 
-    /**
-     * @dev Approve `token` to distribute to royalty receivers.
-     * TODO: onlyOwner vs onlyGovernance
-     */
+    /// @inheritdoc ISangoContent
     function setApprovalForIncomingToken(IERC20 token, bool approved)
         external
-        /* onlyGovernance */
+        override
+        onlyRole(SANGO_GOVERNER_ROLE)
     {
         _setApprovalForIncomingToken(token, approved);
         _creators.setApprovalForIncomingToken(token, approved);
@@ -209,5 +201,34 @@ contract SangoContent is ISangoContent, RoyaltyClaimRight {
         require (amount <= 10000, "SangoContent: alloc <= 10000");
         _burn(account, balanceOf(account));
         _mint(account, amount);
+    }
+
+    /**
+     * @dev Internal function for {ISangoContent-setRoyaltyAllocation}
+     */
+    function _setRoyaltyAllocation(
+        uint32 creatorsAlloc,
+        uint32 cbtStakersAlloc,
+        uint32 cetHoldersAlloc,
+        uint32 primariesAlloc
+    )
+        internal
+    {
+        require (creatorsAlloc <= 10000 && cbtStakersAlloc <= 10000
+            && cetHoldersAlloc <= 10000 && primariesAlloc <= 10000,
+            "SangoContent: each alloc <= 10000"
+        );
+        uint32 mainAllocSum = creatorsAlloc + cbtStakersAlloc + cetHoldersAlloc + primariesAlloc;
+        require (mainAllocSum <= 10000, "RoyaltyProportions: alloc sum <= 10000");
+
+        _setAllocation(address(_creators), creatorsAlloc);
+        _setAllocation(address(_wrappedCBT), cbtStakersAlloc);
+        _setAllocation(address(_cet), cetHoldersAlloc);
+        _setAllocation(address(_primaries), primariesAlloc);
+
+        uint32 treasuryAlloc = 10000 - mainAllocSum;
+        _setAllocation(address(_treasury), treasuryAlloc);
+
+        emit SetRoyaltyAllocation(creatorsAlloc, cbtStakersAlloc, cetHoldersAlloc, primariesAlloc, treasuryAlloc);
     }
 }

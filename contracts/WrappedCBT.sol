@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
@@ -11,19 +11,22 @@ import { RoyaltyClaimRight } from "./claimrights/RoyaltyClaimRight.sol";
  * @notice コンテンツにCBTをstakeした分と同量だけ貰える、コンテンツ毎に発行されるトークン(株式).
  * wCBT の stakeholder は、RBTの分配を受けることができる. また、コンテンツのガバナンス権を持つ場合もある.
  */
-contract WrappedCBT is IWrappedCBT, RoyaltyClaimRight, Ownable {
+contract WrappedCBT is IWrappedCBT, RoyaltyClaimRight, AccessControl {
     IERC20 private _cbt;
     uint256 private _minStakeAmount;
     uint private _lockInterval;
     mapping (address => PendingReceiveStake) private _pendingReceiveStakes;
     mapping (address => bool) private _paybackRequested;
 
+    bytes32 constant public OWNER_ROLE = keccak256("OWNER_ROLE");
+    bytes32 constant public SANGO_ROLE = keccak256("SANGO_ROLE");
+
     constructor(IERC20 cbt, IERC20[] memory approvedTokens, address owner_)
         RoyaltyClaimRight("Wrapped CBT", "CBT")
     {
         _cbt = cbt;
         _approveForIncomingTokens(approvedTokens);
-        transferOwnership(owner_);
+        _grantRole(OWNER_ROLE, owner_);
     }
 
     // ######################
@@ -107,14 +110,14 @@ contract WrappedCBT is IWrappedCBT, RoyaltyClaimRight, Ownable {
     }
 
     // ######################
-    // ## Owner functions  ##
+    // ## Owner Roles      ##
     // ######################
 
     /// @inheritdoc IWrappedCBT
     function acceptPayback(address account)
         external
         override
-        onlyOwner
+        onlyRole(OWNER_ROLE)
     {
         require (_paybackRequested[account], "SangoContent: no payback request");
 
@@ -140,7 +143,7 @@ contract WrappedCBT is IWrappedCBT, RoyaltyClaimRight, Ownable {
     function withdraw(uint256 amount)
         external
         override
-        onlyOwner
+        onlyRole(OWNER_ROLE)
     {
         _cbt.transfer(msg.sender, amount);
         emit Withdraw(amount);
@@ -150,7 +153,7 @@ contract WrappedCBT is IWrappedCBT, RoyaltyClaimRight, Ownable {
     function setLockInterval(uint64 lockInterval)
         external
         override
-        onlyOwner
+        onlyRole(OWNER_ROLE)
     {
         _lockInterval = lockInterval;
         emit SetLockInterval(lockInterval);
@@ -160,19 +163,22 @@ contract WrappedCBT is IWrappedCBT, RoyaltyClaimRight, Ownable {
     function setMinStakeAmount(uint256 amount)
         external
         override
-        onlyOwner
+        onlyRole(OWNER_ROLE)
     {
         _minStakeAmount = amount;
         emit SetMinStakeAmount(amount);
     }
 
+    // ######################
+    // ## Sango Roles      ##
+    // ######################
+
     /**
      * @dev See {RoyaltyClaimRight-_setApprovalForIncomingToken}
-     * TODO: onlyOwner vs onlyGovernance
      */
     function setApprovalForIncomingToken(IERC20 token, bool approved)
         external
-        onlyOwner
+        onlyRole(SANGO_ROLE)
     {
         _setApprovalForIncomingToken(token, approved);
     }

@@ -124,6 +124,8 @@ describe("setRoyaltyAllocation", async () => {
   });
 
   it("Should verify allocations are updated", async () => {
+    const SangoGovernor = await ethers.getContractFactory("SangoGovernor");
+    const sangoGovernor = await SangoGovernor.deploy();
     await content.setRoyaltyAllocation(
       100,
       200,

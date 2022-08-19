@@ -13,7 +13,7 @@ import { ManagedRoyaltyClaimRight } from "./claimrights/ManagedRoyaltyClaimRight
 import { IExcitingModule } from "./components/IExcitingModule.sol";
 import { ICET } from "./tokens/ICET.sol";
 
-contract CET is ERC721, ICET, IRoyaltyClaimRight, AccessControl, Ownable, ReentrancyGuard {
+contract CET is ERC721, ICET, IRoyaltyClaimRight, AccessControl, ReentrancyGuard {
     using Counters for Counters.Counter;
 
     IExcitingModule[] private _excitingModules;
@@ -21,6 +21,8 @@ contract CET is ERC721, ICET, IRoyaltyClaimRight, AccessControl, Ownable, Reentr
     mapping (address => uint256) private _accountTokenId;
     Counters.Counter private _lastTokenId;
 
+    bytes32 constant public OWNER_ROLE = keccak256("OWNER_ROLE");
+    bytes32 constant public SANGO_ROLE = keccak256("SANGO_ROLE");
     bytes32 constant public EXCITING_MODULE_ROLE = keccak256("EXCITING_MODULE_ROLE");
 
     constructor(
@@ -32,7 +34,7 @@ contract CET is ERC721, ICET, IRoyaltyClaimRight, AccessControl, Ownable, Reentr
         ERC721(name, symbol)
     {
         _claimRight = new ManagedRoyaltyClaimRight(name, symbol, approvedTokens);
-        transferOwnership(owner_);
+        _grantRole(OWNER_ROLE, owner_);
     }
 
     // ##############################
@@ -108,7 +110,6 @@ contract CET is ERC721, ICET, IRoyaltyClaimRight, AccessControl, Ownable, Reentr
         external
         override
     {
-        // XXX: 認証済みトークン, 内部コントラクト の関数呼出 なので nonReentrant 不要
         require (_claimRight.isApprovedToken(token), "CET: not approved token");
         token.transferFrom(msg.sender, address(this), amount);
         token.approve(address(_claimRight), amount);
@@ -197,7 +198,7 @@ contract CET is ERC721, ICET, IRoyaltyClaimRight, AccessControl, Ownable, Reentr
     function setExcitingModules(IExcitingModule[] calldata newExcitingModules)
         external
         override
-        onlyOwner
+        onlyRole(OWNER_ROLE)
     {
         for (uint32 i = 0; i < _excitingModules.length;) {
             _revokeRole(EXCITING_MODULE_ROLE, address(_excitingModules[i]));
@@ -212,12 +213,16 @@ contract CET is ERC721, ICET, IRoyaltyClaimRight, AccessControl, Ownable, Reentr
         emit SetExcitingModules(newExcitingModules);
     }
 
+    // ##############################
+    // ## Sango Roles              ##
+    // ##############################
+
     /**
      * @dev See {ManagedRoyaltyClaimRight-setApprovalForIncomingToken}
      */
     function setApprovalForIncomingToken(IERC20 token, bool approved)
         external
-        onlyOwner
+        onlyRole(SANGO_ROLE)
     {
         _claimRight.setApprovalForIncomingToken(token, approved);
     }
@@ -227,7 +232,7 @@ contract CET is ERC721, ICET, IRoyaltyClaimRight, AccessControl, Ownable, Reentr
      */
     function setMinIncomingAmount(IERC20 token, uint256 minAmount)
         external
-        onlyOwner
+        onlyRole(SANGO_ROLE)
     {
         _claimRight.setMinIncomingAmount(token, minAmount);
     }

@@ -30,6 +30,10 @@ interface ISangoContent {
         string cetSymbol;
     }
 
+    // #############################
+    // ## Governance functions    ##
+    // #############################
+
     /**
      * @notice ロイヤリティの受け取る比率(ベーシスポイント)を設定する.
      * 全体で10000を超えて設定することはできない. 余剰分はTreasuryに入る.
@@ -54,6 +58,11 @@ interface ISangoContent {
         uint32 cetHoldersAlloc,
         uint32 primariesAlloc
     ) external;
+
+    /**
+     * @notice Approve `token` to distribute to royalty receivers.
+     */
+    function setApprovalForIncomingToken(IERC20 token, bool approved) external;
 
     // ###########################
     // ## Public functions      ##
