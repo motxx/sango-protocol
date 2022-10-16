@@ -6,6 +6,9 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IOracle, Response } from "./IOracle.sol";
 import { ICET } from "../tokens/ICET.sol";
 
+/**
+ * @dev Implementation of {IOracle} to calculate engagements from YouTube view counts.
+ */
 contract YouTubeLink is ChainlinkClient, IOracle, Ownable {
     using Chainlink for Chainlink.Request;
 
@@ -30,7 +33,7 @@ contract YouTubeLink is ChainlinkClient, IOracle, Ownable {
     }
 
     /**
-     * @notice YouTubeIdから再生回数をリクエストする
+     * @dev Requests view counts by YouTubeId.
      */
     function createRequestTo(
         address oracle,

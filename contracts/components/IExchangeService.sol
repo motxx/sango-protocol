@@ -3,18 +3,27 @@ pragma solidity ^0.8.0;
 
 import { IRBT } from "../tokens/IRBT.sol";
 
-// ExchangeService の責務
-// Fiat と RBT の交換をする
+/**
+ * @dev Interface of {ExchangeService} for exchanging among fiat currencies and {RBT} tokens.
+ */
 interface IExchangeService {
-    // 受け取っていた状態でRBTを amount だけ to に送る
-    function mint(address account, uint256 amount) external; // onlyOwner
+    /**
+     * @dev Mints `amount` {RBT} tokens to the `account`.
+     */
+    function mint(address account, uint256 amount) external;
 
-    // RBT をBurnする。（外の世界でFiatをAddrに対して送る)
+    /**
+     * @dev Burns `amount` {RBT} tokens from the `msg.sender`.
+     */
     function burn(uint256 amount) external;
 
-    // RBTの現在発行量, Fiat の保有量を表す.
+    /**
+     * @dev Returns total supply of {RBT}.
+     */
     function totalSupply() external view returns (uint256);
 
-    // RBTのインスタンスを取得
+    /**
+     * @dev Gets the {RBT} instance.
+     */
     function rbt() external view returns (IRBT);
 }

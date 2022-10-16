@@ -8,8 +8,7 @@ import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 import { RoyaltyClaimRight } from "./claimrights/RoyaltyClaimRight.sol";
 
 /**
- * @notice コンテンツにCBTをstakeした分と同量だけ貰える、コンテンツ毎に発行されるトークン(株式).
- * wCBT の stakeholder は、RBTの分配を受けることができる. また、コンテンツのガバナンス権を持つ場合もある.
+ * @notice Implementation of {IWrappedCBT}.
  */
 contract WrappedCBT is IWrappedCBT, RoyaltyClaimRight, AccessControl {
     IERC20 private _cbt;

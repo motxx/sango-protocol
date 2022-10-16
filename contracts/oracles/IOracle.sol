@@ -3,10 +3,16 @@ pragma solidity ^0.8.0;
 
 import { ICET } from "../tokens/ICET.sol";
 
+/**
+ * @dev Oracle response for calculate SNS engagements.
+ */
 struct Response {
-    uint64 totalEngagement; // 再生回数など
+    uint64 totalEngagement;
 }
 
+/**
+ * @dev Interface of SNS oracle implementations.
+ */
 interface IOracle {
     function setId(ICET cet, address account, string memory id_) external;
     function id(ICET cet, address account) external view returns (string memory);

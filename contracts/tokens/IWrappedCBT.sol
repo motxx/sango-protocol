@@ -5,6 +5,9 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/**
+ * @dev Interface of {WrappedCBT} implementation.
+ */
 interface IWrappedCBT {
     struct PendingReceiveStake {
         uint stakedTimestamp;
@@ -24,43 +27,38 @@ interface IWrappedCBT {
     // ######################
 
     /**
-     * @notice CBTを支払い、ロック期間終了後に同量のwCBTを受け取る.
-     * Emits a {Stake} event.
+     * @notice Stakes `amount` {CBT}, and receive the same amount of {WrappedCBT} after lock period expired.
      *
-     * @param amount CBT/wBTの量
+     * Emits a {Stake} event.
      */
     function stake(uint256 amount) external;
 
     /**
-     * @notice 権利確定済のwCBTを受け取る.
+     * @notice Claims {WrappedCBT} which lock period expired.
+     *
      * Emits a {ClaimWCBT} event.
      */
     function claimWCBT() external;
 
     /**
-     * @notice 返済を要求する.
+     * @notice Requests the staked {CBT} payback.
+     *
      * Emits a {RequestPayback} event.
      */
     function requestPayback() external;
 
     /**
-     * @notice ステーキングの最低金額を取得する.
-     *
-     * @return 現在の最低金額
+     * @notice Gets the minimum amount of required stakes.
      */
     function minStakeAmount() external view returns (uint256);
 
     /**
-     * @notice stake 済か否かを返す. 権利確定前でも stake されていれば真を返す.
-     *
-     * @return ステーキングしたか否か
+     * @notice Returns whether msg.sender is staking or not.
      */
     function isStaking(address account) external view returns (bool);
 
     /**
-     * @notice account が返済要求中かを確認
-     *
-     * @return 要求中である場合 True が返る
+     * @notice Returns whether `account` is requesting payback or not.
      */
     function isPaybackRequested(address account) external view returns (bool);
 
@@ -69,35 +67,30 @@ interface IWrappedCBT {
     // ######################
 
     /**
-     * @notice 返済の要求を承諾し、wCBTと引き換えにCBTを返済する.
-     * 権利確定(wCBT受領)前のCBTも返済される.
+     * @notice Accepts `account` payback request and returns {CBT} in exchange for {WrappedCBT}.
+     * 
      * Emits an {AcceptPayback} event.
-     *
-     * @param account 返済対象のアカウント
      */
     function acceptPayback(address account) external;
 
     /**
-     * @notice stakeされているCBTをOwnerが引き落とす.
-     * Emits a {Withdraw} event.
+     * @notice Withdraws staked {CBT} by the owner.
      *
-     * @param amount 引き落とす金額
+     * Emits a {Withdraw} event.
      */
     function withdraw(uint256 amount) external;
 
     /**
-     * @notice 権利確定までのロック期間を設定する.
-     * Emits a {SetLockInterval} event.
+     * @notice Sets `lockInterval` for staking.
      *
-     * @param lockInterval ロック期間.
+     * Emits a {SetLockInterval} event.
      */
     function setLockInterval(uint64 lockInterval) external;
 
     /**
-     * @notice ステーキングの最低金額を設定する.
-     * Emits a {SetMinStakeAmount} event.
+     * @notice Sets `amount` as minimum required stake amount.
      *
-     * @param amount 設定する最低金額
+     * Emits a {SetMinStakeAmount} event.
      */
     function setMinStakeAmount(uint256 amount) external;
 }

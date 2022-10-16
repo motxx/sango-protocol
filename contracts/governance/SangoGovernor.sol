@@ -8,6 +8,9 @@ import { GovernorDelegate } from "./GovernorDelegate.sol";
 import { ISangoGovernor } from "./ISangoGovernor.sol";
 import { ISangoContent } from "../ISangoContent.sol";
 
+/**
+ * @dev Implementation of {SangoGovernor}.
+ */
 contract SangoGovernor is ISangoGovernor, GovernorDelegate {
     TimelockController private _timelock;
     ISangoContent private _parent;

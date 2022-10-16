@@ -13,6 +13,9 @@ import { SangoGovernor } from "./governance/SangoGovernor.sol";
 import { ICET } from "./tokens/ICET.sol";
 import { IWrappedCBT } from "./tokens/IWrappedCBT.sol";
 
+/**
+ * @notice Implementation of {ISangoContent}.
+ */
 contract SangoContent is ISangoContent, RoyaltyClaimRight, AccessControl {
     ManagedRoyaltyClaimRight private _creators;
     WrappedCBT private _wrappedCBT;

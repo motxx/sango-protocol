@@ -9,8 +9,7 @@ import { GovernorVotesQuorumFraction } from "@openzeppelin/contracts/governance/
 import { GovernorTimelockControl, TimelockController } from "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
 /**
- * @notice ガバナンス機能を備えたコントラクト. ガバナンスに実行を任せたい関数が存在するコントラクトで、
- * 本コントラクトを継承するか、本コントラクトのサブコントラクトをフィールドに持って使用する.
+ * @dev Abstract implementation of governance contract.
  */
 abstract contract GovernorDelegate is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
     constructor(IVotes _token, TimelockController _timelock)

@@ -13,6 +13,9 @@ import { ManagedRoyaltyClaimRight } from "./claimrights/ManagedRoyaltyClaimRight
 import { IExcitingModule } from "./components/IExcitingModule.sol";
 import { ICET } from "./tokens/ICET.sol";
 
+/**
+ * @notice Implementation of {ICET}.
+ */
 contract CET is ERC721, ICET, IRoyaltyClaimRight, AccessControl, ReentrancyGuard {
     using Counters for Counters.Counter;
 

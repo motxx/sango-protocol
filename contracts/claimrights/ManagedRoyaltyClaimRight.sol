@@ -5,6 +5,9 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { RoyaltyClaimRight } from "./RoyaltyClaimRight.sol";
 
+/**
+ * @dev Implementation of {RoyaltyClaimRight} interface for admin-manageable royalty allocations.
+ */
 contract ManagedRoyaltyClaimRight is RoyaltyClaimRight, Ownable {
     event Mint(address account, uint256 amount);
     event BurnAll();

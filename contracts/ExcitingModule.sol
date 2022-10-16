@@ -6,6 +6,9 @@ import { IExcitingModule } from "./components/IExcitingModule.sol";
 import { IOracle } from "./oracles/IOracle.sol";
 import { ICET } from "./tokens/ICET.sol";
 
+/**
+ * @notice Implementation of {IExcitingModule}.
+ */
 contract ExcitingModule is IExcitingModule, Ownable {
     mapping (ICET => IOracle) private _oracles;
     mapping (ICET => mapping (address => uint256)) private _alreadyMinted;

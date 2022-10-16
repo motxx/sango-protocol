@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { RoyaltyClaimRight } from "./RoyaltyClaimRight.sol";
 
+/**
+ * @dev Implementation of {RoyaltyClaimRight} interface for fixed royalty allocations.
+ */
 contract FixedRoyaltyClaimRight is RoyaltyClaimRight {
     address[] private _accounts;
     mapping (address => bool) private _isMember;
