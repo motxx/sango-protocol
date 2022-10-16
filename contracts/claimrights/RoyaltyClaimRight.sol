@@ -13,12 +13,7 @@ import { IRoyaltyClaimRight } from "./IRoyaltyClaimRight.sol";
 
 /**
  * @dev Abstract implementation of {IRoyaltyClaimRight}.
- *
- * 印税分配請求権を表すトークン。ERC20の印税分配比率を決める際は、本クラスを継承したトークンを作成する。
- * 分配比率は、mint, burn, transfer による保有量によって決定されるが、本クラスにはそれらの実装を持たない。
- * 比率の決め方は、Owner やガバナンスが決める場合や、ユーザの staking 量、X to Earn の貢献値で決めるなど、
- * 複数の方法が考えられる。mint, burn の内容や transfer の可否等が各ケースで異なるため、サブクラスで実装する。
- */
+ * */
 abstract contract RoyaltyClaimRight is IRoyaltyClaimRight, ERC20, ERC20Votes, ReentrancyGuard {
     using Address for address;
 

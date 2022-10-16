@@ -10,6 +10,9 @@ import { IExchangeService } from "./components/IExchangeService.sol";
 import { IRBT } from "./tokens/IRBT.sol";
 import { RBT } from "./RBT.sol";
 
+/**
+ * @notice Implementation of {IExchangeService}.
+ */
 contract ExchangeService is IExchangeService, Ownable {
     using Address for address;
 

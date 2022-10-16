@@ -122,20 +122,6 @@ describe("setRoyaltyAllocation", async () => {
     expect(await content.balanceOf(primaries.address)).equals(40);
     expect(await content.balanceOf(treasury.address)).equals(9900);
   });
-
-  it("Should verify allocations are updated", async () => {
-    await content.setRoyaltyAllocation(
-      100,
-      200,
-      300,
-      400
-    );
-    expect(await content.balanceOf(creators.address)).equals(100);
-    expect(await content.balanceOf(wCBT.address)).equals(200);
-    expect(await content.balanceOf(cet.address)).equals(300);
-    expect(await content.balanceOf(primaries.address)).equals(400);
-    expect(await content.balanceOf(treasury.address)).equals(9000);
-  });
 });
 
 describe("forceClaimAll", async () => {

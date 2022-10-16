@@ -7,6 +7,9 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IRBT } from "./tokens/IRBT.sol";
 
+/**
+ * @notice Implementation of {IRBT}.
+ */
 contract RBT is ERC20, Ownable, IRBT {
     using Address for address;
 
@@ -15,6 +18,7 @@ contract RBT is ERC20, Ownable, IRBT {
     {
     }
 
+    /// @inheritdoc IRBT
     function mint(address to, uint256 amount)
         external
         override
@@ -23,6 +27,7 @@ contract RBT is ERC20, Ownable, IRBT {
         _mint(to, amount);
     }
 
+    /// @inheritdoc IRBT
     function burn(address account, uint256 amount)
         external
         override

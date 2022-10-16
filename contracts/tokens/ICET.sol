@@ -4,46 +4,40 @@ pragma solidity ^0.8.0;
 import { IRoyaltyClaimRight } from "../claimrights/IRoyaltyClaimRight.sol";
 import { IExcitingModule } from "../components/IExcitingModule.sol";
 
+/**
+ * @dev Interface of {CET} implementation.
+ */
 interface ICET {
     event StatementOfCommit(address account, uint256 tokenId);
     event ClaimCET(address account, uint256 afterBalance);
     event SetExcitingModules(IExcitingModule[] newExcitingModules);
 
     /**
-     * @notice 貢献の宣言.
-     * Emits a {StatementOfCommit} event.
+     * @notice Declares a new commitment to the {SangoContent}.
      *
-     * TODO: 引数に targetCommit 宣言した貢献の指標 を追加
+     * Emits a {StatementOfCommit} event.
      */
     function statementOfCommit() external;
 
     /**
-     * @notice 登録してある Exciting Module に対し Mint CET を実行を要求する
-     * Exciting Serviceは 引数のaccountに対してどれくらいCETがMintできるかを算出, Mintする
-     * Note: CET は Primary に対して発行することはできない。
-     * 理由として、二次創作を楽しむ(Excited)一次創作は存在しないため
-     * コンテンツにclaimさせる場合もあるため、引数指定が必要になっている. 誰でも他人の claim が可能な点に注意(TODO: 要再考).
-     * Emits a {ClaimCET} event.
+     * @notice Claims earned {CET} from `account` to {ExcitingModule}.
      *
-     * @param account CETをMintするアドレス.
+     * Emits a {ClaimCET} event.
      */
     function claimCET(address account) external;
 
     /**
-     * @notice CETの保有数を返す.
-     *
-     * @param account 対象のアカウント
-     * @return CETの保有数
+     * @notice Returns {CET} holding amounts by `account`.
      */
     function holdingAmount(address account) external view returns (uint256);
 
     /**
-     * @dev 登録済みの ExcitingModule 一覧を返す.
+     * @dev Returns an array of the exciting modules associated with {CET}.
      */
     function excitingModules() external view returns (IExcitingModule[] memory);
 
     /**
-     * @dev 内部の RoyaltyClaimRight を返す
+     * @dev Returns the internal module {RoyaltyClaimRight}.
      */
     function claimRight() external view returns (IRoyaltyClaimRight);
 
@@ -52,10 +46,7 @@ interface ICET {
     // ##############################
 
     /**
-     * @notice アカウントのCETの保有数を増加させる.
-     *
-     * @param account 対象アカウント
-     * @param amount 保有数の増分
+     * @dev Mints `amount` {CET} to `account` by ExcitingModule.
      */
     function mintCET(address account, uint256 amount) external;
 
@@ -64,11 +55,9 @@ interface ICET {
     // ##############################
 
     /**
-     * @notice CETを発行するためのActionをチェックする ExcitingModule を設定する.
-     * 複数Moduleを設定できる。
-     * Emits a {SetExcitingModules} event.
+     * @notice Sets `excitingModules` to mint {CET}.
      *
-     * @param excitingModules ExcitingModule の Contract Addr
+     * Emits a {SetExcitingModules} event.
      */
     function setExcitingModules(IExcitingModule[] calldata excitingModules) external;
 }
